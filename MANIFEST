@@ -1,0 +1,18 @@
+Changes
+doc/FAQ
+doc/FAQ.html
+doc/FAQ.pod
+doc/README
+doc/README.html
+FAQ
+INSTALL
+lib/Apache/Logmonster/Utility.pm
+logmonster.conf
+logmonster.pl
+Makefile.PL
+MANIFEST
+META.yml			Module meta-data (added by MakeMaker)
+README
+t/Filehandle.t
+t/Utility.t
+TODO

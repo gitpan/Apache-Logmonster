@@ -1,0 +1,11 @@
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Apache-Logmonster
+version:      2.74
+version_from: logmonster.pl
+installdirs:  site
+requires:
+    Compress::Zlib:                0
+    Date::Parse:                   0
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.12

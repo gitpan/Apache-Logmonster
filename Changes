@@ -1,0 +1,203 @@
+
+2.74  - Nov 26, 2004
+ - package is now named Apache::Logmonster to fit nicely
+   into a CPAN category
+ - bundled up for CPAN & freshmeat release
+ - Makefile.PL
+   - updated package NAME
+   - removed MATT::* dependency, added Compress::Zlib dep
+ - logmonster.pl
+   - updated package name
+ - added more example settings to logmonster.conf
+ - cleaned up pod docs for prettier web page formatting
+ - added TODO file
+ - remove MATT::Bundle reference from FAQ
+
+2.73  - Nov 12, 2004
+
+ - updated lib/Logmonster/Utility to latest
+ - fixed get_the_date bug in Utility
+ - added many more tests for Utility
+ - fixed a bug in my fileparse call (File::Basename)
+
+2.72  - Nov 11, 2004
+
+ - Removed MATT::Utility dependency
+ - added lib/logmonster/Utility (logmonster::Utility)
+ - removed Exporter
+ - updates for use with logmonster::Utility
+ - replaced StripLastDirFromPath with File::Basename
+
+2.71  - Oct 22, 2004
+
+ - Raymond Dijkxhoorn suggested not sorting the files if 
+   there's only one host. Shucks, that's a reasonable enough 
+   thing to do, for those of you with only one web server. ;-)
+ - Logmonster will now dutifully skip sorting logs if only
+   one hostname is configured in logmonster.conf
+
+2.70  - 0ct 22, 2004
+
+ - allow for ServerName to have a :80 style suffix
+ - added verbose (-v) flag.
+ - fixed up reporting so quiet mode is really quiet
+    unless there are errors
+ - normal output is prettier
+ - debugging output is much prettier
+ - apache config file parsing is now much more versatile
+ - if you have a folder full of files for vhosts, you can
+   have multiple vhosts within a file now
+ - misc internal changes for efficiency
+ - prototyped all subroutines
+ - added additional comments here and there
+ - added test for FileHandle
+
+2.6.6 - Jun 16, 2004
+
+ - Added inline documentation to a few of the subs
+ - Modified SortVhostLogs so that it uses much less memory
+   by writing to the log file as we sort instead of building
+   an array and then writing the array contents to the file
+ - in GetDomainList, I forgot to add domains without aliases
+   to %domains 
+ - GetServerName: made the regexp search more reliable (no
+   known problems but the potential existed).
+
+2.6.5 - Jun 10, 2004
+
+ - Switched date parsing regexp from / / to /\s+/ in 
+   SortVhostLogs per Earl Ruby (eruby@switchmanagement.com)
+   for compatibility with Apache::Registry
+
+2.6.4 - Apr 14, 2004
+
+  Added regexp notes
+  Added additional debugging
+  Check for files locally before trying to compress them
+
+2.6.3 - Mar 28, 2004
+
+  Updated regexp to support numeric vhosts
+  Updated logmonster.pl pod documentation
+  Updated Makefile.PL, added README, FAQ files
+  Added BSD copyright
+
+2.6.2 - Mar 11, 2004
+
+  Corrected a typo in the logmonster.pl config file.
+
+2.6.1 - Feb 24, 2004
+
+  Fixed problem where paths with caps weren't detected 
+   (search string was lower cased)
+
+2.6   - Feb 21, 2004
+
+  Updated documentation and web site. More informative.
+
+2.5.2 - Sep 24, 2003
+
+  Added a strip leading spaces function to GetVhostsFromFile
+  Adjusted so FindTheBin will find awstats in it's default
+    location (/usr/local/www/cgi-bin/awstats.pl)
+
+2.5   - Sep 15, 2003
+
+  Fixed a problem with HitsPerVHost not getting written
+  Fixed a mis-feature where running logmonster -r was 
+    clobbering the active log processing dir. Oops.
+  Fixed a couple problems related to interaction between
+    script and MATT::Utility
+  Made quite a few failures more graceful. This later proved
+    to be only beneficial from a theoretical standpoint
+    as it didn't solve the problem I was tracking down.
+
+2.4   - Aug 14, 2003
+
+  Updated FetchLogFiles so that you don't need to ssh to localhost
+  Updated URLs from matt.simerson.net to tnpi.biz
+  Moved configuration from script to logmonster.conf
+  Added Changes to the CVS depot
+  Added support for AWStats log processor
+  Added lots of documentation to logmonster.conf
+
+2.3   - Jul 10, 03
+
+  Added pod documentation.  
+  Cleaned up SysCmd calls and now SysCmd calls use MATT::Utility
+
+2.2   - Mar 24, 03
+
+  Moved many subs out of script into modules
+
+2.1.1 - Mar 18, 03
+
+  Report hit counts (-r designed to be used with SNMP and RRDutil)
+
+2.1   - Mar 17, 03
+
+  Moved code out of FetchLogFiles to GetTheLogDir for reuse
+  Writes counters to $logdir/HitsPerVhost.txt
+  Writes activity log to $logdir/Logmonster.txt
+  Renamed $logdir to $logbase
+
+2.0.3 - Mar 07, 03 
+
+  Moved FAQ and Changelog to web site.
+  Created web page for logmonster.
+  Added support for http-analyze. It should work but I
+    haven't used http-analzye in about 5 years so I 
+    might be forgetting something.
+
+2.0.2 - Mar 06, 03 
+
+  Added the httpd.conf parsing stuff. Now works with a vhost
+    directory or parses out of your httpd.conf - cool :)
+
+2.0.1 - Mar 06, 03 
+
+  Moved vhost log pre-processer checks out of FeedTheMachine
+    into CheckStatsDir. Run it before SortVhostLogs so we 
+    skip sorting any logs that we aren't going to store.
+  Count up invalid lines in log files and report them instead
+    of dying when we encounter them.
+  Print out prettier logs.
+
+2.0   - Mar 04, 03 
+
+  An entire re-write
+  Logic is much cleaner now and way more efficient
+  Pulls most settings out of apache config files
+  Reporting is much better :)
+  Added -b (process archived logs) feature
+  Added -h & -m (hourly & monthly processing)
+  Added -n (dry run) so you can preview what it'll do
+  Now clean enough that I'll make it publicly available
+
+1.4   - Feb 22, 03 
+
+  Major code cleanups
+  Reworked fetch_the_files
+  Added system_command
+  Added FindTheBin
+
+1.3   - Nov 25, 02 
+
+  Added use strict (forced code cleanup)
+  Added getopt::std instead of custom parser
+  Moved $quiet to $opt_q, $debug to $opt_v
+
+1.2.1 - Dec 14, 01 
+
+  Made it work with matt.simerson.net
+
+1.2   - Jun 28, 01 
+
+  Cleaned up the code, added debug flag, expanded logic
+    so v1.2 can replicate 1.0 & 1.1 behaviour with options
+
+1.1   - Feb 14, 01 
+
+  Added support for multiple domains
+
+1.0   - Oct 29, 00 - Origin

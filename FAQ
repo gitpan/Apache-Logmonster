@@ -1,0 +1,101 @@
+Why did you write this?
+    Typical Scenario: You have a web server that serves your domain. You
+    write a simple script to restart apache each night and pipe the logs off
+    to your analyzer.
+
+    ISP/Hosting Scenario: Each server hosts many domains. You have load
+    balanced servers (multiple machines) serving each domain. A tool like
+    this is necessary to:
+
+    1. collect all the log files
+    2. get a list of your domains you host for
+    3. split the logs based on the virtual host(s)
+    4. sort them into cronological order
+    5. feed logs into analyzer
+    6. decide what to do with the output
+What assumptions does your script make?
+        1. You use cronolog
+        2. You have enough memory to fit your largest zones log file into
+        RAM
+        3. You have the following Perl modules installed:
+            Most systems have all but Compress::Zlib installed.
+
+        4. See "Apache Logs" Q&A below
+        5. The time on your web servers is syncronized (think NTP)
+        6. You use webalizer, http-analyze, or AWstats for log processing
+What is supposed to be in vhost?
+            vhost should be either a file with all your directives listed
+            (ie, httpd.conf) or a directory (my favorite way) that contains
+            files, each containing the VirtualHost and related directives
+            for that Apache vhost.
+
+How do my logs need to be set up?
+            While this may not work for everyone, it works very well for me
+            on the several of the web farms that I manage:
+
+            LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\"
+            \"%{User-Agent}i\" %v" combined
+            CustomLog "| /usr/local/sbin/cronolog
+            /var/log/apache/%Y/%m/%d/access.log" combined
+            ErrorLog "| /usr/local/sbin/cronolog
+            /var/log/apache/%Y/%m/%d/error.log"
+
+            The differences to LogFormat are subtle. In fact, that line is
+            identical to it's heir in the httpd.conf-default file except for
+            the %v at the end. That little %v tells Apache to write the
+            canonical servername (vhost) into the logfile. That's how I can
+            reliably parse the logs into vhosts. The CustomLog line is
+            pretty easy too. We pipe our logs to cronolog and it's set to
+            store each days logs into an appropriately named directory. So
+            todays logs are stored on /var/log/apache/2003/03/05/access.log.
+            That makes it very easy for me to grab an interval worth of logs
+            to process.
+
+How do I process my logs hourly?
+            Set cronolog to "%Y/%m/%d/%H", run logmonster with -h, and
+            adjust cron. Get yourself acquainted with webalizer -p and it's
+            limits
+
+Why do you use cronolog?
+            Read the Apache docs and all the caveats required to rotate
+            logs, including restarting the server. Then factor that into
+            using several servers in different time zones, etc. and you'll
+            find it's a lot easier to just use cronolog. I've used cronolog
+            for years and have never had a problem with it.
+
+Why not use one file per vhost so you don't have to split them?
+            I tried that. One problem is that you end up with lots of open
+            file descriptors (one per vhost) and that only scales so far
+            before you decide it's not such a great idea. You still end up
+            having to collect the files from multiple servers and sort them
+            before feeding them into your log processor so you might as well
+            just start by having them all in one place.
+
+What's the recommended way to implement this?
+            Adjust CustomLog and add the %v to it as show above. If you
+            aren't already using cronolog, start. Wait a day. Test by
+            running "logmonster -d -n". It will tell you what it's doing and
+            everything should look reasonable. Correct anything you don't
+            like (like creating $statsdir for domains that should have it,
+            etc) and then create a cron entry running "logmonster -d"
+            anytime after midnight. Read the output from logmonster in your
+            mailbox for the next week. When you're confident everything is
+            great, adjust crontab and add a "-q" to it so it stops emailing
+            you (unless there's errors).
+
+Can you explain how to use the -b stuff?
+            OK, lets say you shut your server down at 0:55 last night to do
+            some system maintenance. You brought it back up at at 1:05 (10
+            minutes later) but your cron job that runs logmonster at 1:00am
+            didn't run. Easy enough, you just run it on the command line and
+            all is well.
+
+            Now, let's suppose you made an oopsie that's caused logmonster
+            to not run for all of the last week. Your back from vacation and
+            notice the errors in your mailbox because that's where you've
+            configured cron stuff to go, right? Now you set about to fix the
+            problem. The best way to do that is run logmonster with "-d
+            -b7". Logmonster will dutifully process the logs from 7 days ago
+            (after confirming the date with you). Then run again with "-d
+            -b6", etc until you're current.
+

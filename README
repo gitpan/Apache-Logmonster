@@ -1,0 +1,181 @@
+NAME
+    Apache::Logmonster
+
+SYNOPSIS
+    Processor for Apache logs
+
+DESCRIPTION
+    A tool to collect log files from multiple Apache web servers, split them
+    based on the virtual host, sort the logs into cronological order, and
+    then pipe them into a log file analyzer of your choice (webalizer,
+    http-analyze, AWstats, etc).
+
+  FEATURES
+    Log Retrieval from one or multiple hosts
+    Ouputs to webalizer, http-analyze, and AWstats.
+    Automatic configuration by reading Apache config files.
+    Outputs stats into each virtual domains stats dir, if that directory
+    exists. (HINT: Easy way to enable or disable stats for a virtual host).
+    Efficient: uses Compress::Zlib to read directly from .gz files to
+    minimize disk use. Skips processing logs for vhosts with no $statsdir.
+    Doesn't sort if you only have logs from one host.
+    Flexible: you can run it monthly, daily, or hourly
+    Reporting: saves an on disk activity report and an email friendly
+    report.
+    Reliable: lots of error checking so if something goes wrong, it'll give
+    you a useful error message.
+    Understands and correctly deals with server aliases
+
+INSTALLATION
+    Step 1 - Download and install (it's FREE!)
+        http://www.tnpi.biz/store/product_info.php?cPath=2&products_id=40
+
+        Install like every other perl module:
+
+         perl Makefile.PL
+         make test
+         make install 
+
+        To install the config file use "make conf" or "make newconf".
+        newconf will overwrite any existing config file, so use it only for
+        new installs.
+
+    Step 2 - Edit logmonster.conf
+         vi /usr/local/etc/logmonster.conf
+
+    Step 3 - Edit httpd.conf
+        Adjust the CustomLog and ErrorLog definitions. We make two changes,
+        adding %v (the vhost name) to the CustomLog and adding cronolog to
+        automatically rotate the log files.
+
+        LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\"
+        \"%{User-Agent}i\" %v" combined
+        CustomLog "| /usr/local/sbin/cronolog
+        /var/log/apache/%Y/%m/%d/access.log" combined
+        ErrorLog "| /usr/local/sbin/cronolog
+        /var/log/apache/%Y/%m/%d/error.log"
+
+    Step 4 - Test manually, then add to cron.
+          crontab -u root -e
+          5 1 * * * /usr/local/sbin/logmonster -d
+
+    Step 5 - Read the FAQ
+        http://www.tnpi.biz/internet/www/logmonster/faq.shtml
+
+    Step 6 - Enjoy
+        Allow Logmonster to make your life easier by handling your log
+        processing. Enjoy the daily summary emails, and then express your
+        gratitude by making a small donation to support future development
+        efforts.
+
+DEPENDENCIES
+      Compress::Zlib
+      Date::Parse (TimeDate)
+
+report_hits
+    report_hits reads a days log file and reports the results back to
+    standard out. The logfile contains key/value pairs like so:
+
+        matt.simerson:4054
+        www.tnpi.biz:15381
+        www.nictool.com:895
+
+    This file is read by logmonster when called in -r (report) mode and is
+    expected to be called via an SNMP agent.
+
+report_open
+    In addition to emailing you a copy of the report, Logmonster leaves
+    behind a copy in the log directory.
+
+check_stats_dir
+    Each domain on your web server is expected to have a "stats" dir. I name
+    mine "stats" and locate in their DocumentRoot, owned by root so that the
+    user doesn't delete it. This sub first goes through the list of files in
+    (by default) /var/log/apache/tmp/doms, which is a file for each vhost.
+    The file name matches the vhost name the contents are the log entries
+    that correspond to that vhost.
+
+    If the file is zero bytes, it deletes it as there is nothing to do.
+
+    Otherwise, it gathers the vhost name from the file and checks the
+    %domains hash to see if a directory path exists for that vhost. If no
+    hash entry is found or the entry is not a directory, then we declare the
+    hits unmatched and discard them.
+
+    For log files with entries, we check inside the docroot for a stats
+    directory. If no stats directory exists, then we discard those entries
+    as well.
+
+feed_the_machine
+    feed_the_machine takes the sorted vhost logs and feeds them into the
+    stats processor that you chose.
+
+sort_vhost_logs
+    At this point, we'll have collected the Apache logs from each web server
+    and split them up based on which vhost they were served for. However,
+    our stats processors (most of them) require the logs to be sorted in
+    cronological date order. So, we open up each vhosts logs for the day,
+    read them into a hash, sort them based on their log entry date, and then
+    write them back out.
+
+split_logs_to_vhosts
+    After collecting the log files from each server in the cluster, we need
+    to split them up based upon the vhost they were intended for. This sub
+    does that.
+
+AUTHOR
+    Matt Simerson <matt@tnpi.biz>
+
+BUGS
+    None known. Report any to author.
+
+TODO
+    Support for analog.
+
+    Support for individual webalizer.conf file for each domain
+
+    Delete log files older than X days/month
+
+    Do something with error logs (other than just compress)
+
+    If files to process are larger than 10MB, find a nicer way to sort them
+    rather than reading them all into a hash. Now I create two hashes, one
+    with data and one with dates. I sort the date hash, and using those
+    sorted hash keys, output the data hash to a sorted file. This is
+    necessary as wusage and http-analyze require logs to be fed in
+    chronological order. Take a look at awstats logresolvemerge as a
+    possibility.
+
+SEE ALSO
+    http://www.tnpi.biz/internet/www/logmonster
+
+COPYRIGHT
+    Copyright (c) 2003-2004, The Network People, Inc. All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are
+    met:
+
+    Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+
+    Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+
+    Neither the name of the The Network People, Inc. nor the names of its
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+    TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+    PARTICULAR PURPOSE ARE DIS CLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+    TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+

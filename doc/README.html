@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>logmonster README</title>
+<link rev="made" href="mailto:root@hampsten.nonet" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#features">FEATURES</a></li>
+	</ul>
+
+	<li><a href="#installation">INSTALLATION</a></li>
+	<li><a href="#dependencies">DEPENDENCIES</a></li>
+	<li><a href="#report_hits">report_hits</a></li>
+	<li><a href="#report_open">report_open</a></li>
+	<li><a href="#check_stats_dir">check_stats_dir</a></li>
+	<li><a href="#feed_the_machine">feed_the_machine</a></li>
+	<li><a href="#sort_vhost_logs">sort_vhost_logs</a></li>
+	<li><a href="#split_logs_to_vhosts">split_logs_to_vhosts</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#bugs">BUGS</a></li>
+	<li><a href="#todo">TODO</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Apache::Logmonster</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>Processor for Apache logs</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>A tool to collect log files from multiple Apache web servers, split them based on the virtual host, sort the logs into cronological order, and then pipe them into a log file analyzer of your choice (webalizer, http-analyze, AWstats, etc).</p>
+<p>
+</p>
+<h2><a name="features">FEATURES</a></h2>
+<dl>
+<dt><strong><a name="item_log_retrieval_from_one_or_multiple_hosts">Log Retrieval from one or multiple hosts</a></strong><br />
+</dt>
+<dt><strong><a name="item_ouputs_to_webalizer_2c_http_2danalyze_2c_and_awsta">Ouputs to webalizer, http-analyze, and AWstats.</a></strong><br />
+</dt>
+<dt><strong><a name="item_automatic_configuration_by_reading_apache_config_f">Automatic configuration by reading Apache config files.</a></strong><br />
+</dt>
+<dt><strong><a name="item_outputs_stats_into_each_virtual_domains_stats_dir_">Outputs stats into each virtual domains stats dir, if that directory exists. (HINT: Easy way to enable or disable stats for a virtual host).</a></strong><br />
+</dt>
+<dt><strong><a name="item_efficient_3a_uses_compress_3a_3azlib_to_read_direc">Efficient: uses Compress::Zlib to read directly from .gz files to minimize disk use. Skips processing logs for vhosts with no $statsdir. Doesn't sort if you only have logs from one host.</a></strong><br />
+</dt>
+<dt><strong><a name="item_flexible_3a_you_can_run_it_monthly_2c_daily_2c_or_">Flexible: you can run it monthly, daily, or hourly</a></strong><br />
+</dt>
+<dt><strong><a name="item_reporting_3a_saves_an_on_disk_activity_report_and_">Reporting: saves an on disk activity report and an email friendly report.</a></strong><br />
+</dt>
+<dt><strong><a name="item_reliable_3a_lots_of_error_checking_so_if_something">Reliable: lots of error checking so if something goes wrong, it'll give you a useful error message.</a></strong><br />
+</dt>
+<dt><strong><a name="item_understands_and_correctly_deals_with_server_aliase">Understands and correctly deals with server aliases</a></strong><br />
+</dt>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="installation">INSTALLATION</a></h1>
+<dl>
+<dt><strong><a name="item_install">Step 1 - Download and install (it's FREE!)</a></strong><br />
+</dt>
+<dd>
+<a href="http://www.tnpi.biz/store/product_info.php?cPath=2&products_id=40">http://www.tnpi.biz/store/product_info.php?cPath=2&products_id=40</a>
+</dd>
+<dd>
+<p>Install like every other perl module:</p>
+</dd>
+<dd>
+<pre>
+ perl Makefile.PL
+ make test
+ make install</pre>
+</dd>
+<dd>
+<p>To install the config file use ``make conf'' or ``make newconf''. newconf will overwrite any existing config file, so use it only for new installs.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_step_2__2d_edit_logmonster_2econf">Step 2 - Edit logmonster.conf</a></strong><br />
+</dt>
+<dd>
+<pre>
+ vi /usr/local/etc/logmonster.conf</pre>
+</dd>
+<dt><strong><a name="item_step_3__2d_edit_httpd_2econf">Step 3 - Edit httpd.conf</a></strong><br />
+</dt>
+<dd>
+Adjust the CustomLog and ErrorLog definitions. We make two changes, adding %v (the vhost name) to the CustomLog and adding cronolog to automatically rotate the log files.
+</dd>
+<dl>
+<dt><strong><a name="item_logformat__22_25h__25l__25u__25t__5c_22_25r_5c_22_">LogFormat ``%h %l %u %t \''%r\`` %&gt;s %b \''%{Referer}i\`` \''%{User-Agent}i\`` %v'' combined</a></strong><br />
+</dt>
+<dt><strong><a name="item_customlog__22_7c__2fusr_2flocal_2fsbin_2fcronolog_">CustomLog ``| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/access.log'' combined</a></strong><br />
+</dt>
+<dt><strong><a name="item_errorlog__22_7c__2fusr_2flocal_2fsbin_2fcronolog__">ErrorLog ``| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/error.log''</a></strong><br />
+</dt>
+</dl>
+<dt><strong><a name="item_step_4__2d_test_manually_2c_then_add_to_cron_2e">Step 4 - Test manually, then add to cron.</a></strong><br />
+</dt>
+<dd>
+<pre>
+  crontab -u root -e
+  5 1 * * * /usr/local/sbin/logmonster -d</pre>
+</dd>
+<dt><strong><a name="item_step_5__2d_read_the_faq">Step 5 - Read the FAQ</a></strong><br />
+</dt>
+<dd>
+<a href="http://www.tnpi.biz/internet/www/logmonster/faq.shtml">http://www.tnpi.biz/internet/www/logmonster/faq.shtml</a>
+</dd>
+<p></p>
+<dt><strong><a name="item_step_6__2d_enjoy">Step  6 - Enjoy</a></strong><br />
+</dt>
+<dd>
+Allow Logmonster to make your life easier by handling your log processing. Enjoy the daily summary emails, and then express your gratitude by making a small donation to support future development efforts.
+</dd>
+<p></p></dl>
+<p>
+</p>
+<hr />
+<h1><a name="dependencies">DEPENDENCIES</a></h1>
+<pre>
+  Compress::Zlib
+  Date::Parse (TimeDate)</pre>
+<p>
+</p>
+<hr />
+<h1><a name="report_hits">report_hits</a></h1>
+<p>report_hits reads a days log file and reports the results back to standard out. The logfile contains key/value pairs like so:
+</p>
+<pre>
+
+    matt.simerson:4054
+    www.tnpi.biz:15381
+    www.nictool.com:895</pre>
+<p>This file is read by logmonster when called in -r (report) mode
+and is expected to be called via an SNMP agent.</p>
+<p>
+</p>
+<hr />
+<h1><a name="report_open">report_open</a></h1>
+<p>In addition to emailing you a copy of the report, Logmonster leaves behind a copy in the log directory.</p>
+<p>
+</p>
+<hr />
+<h1><a name="check_stats_dir">check_stats_dir</a></h1>
+<p>Each domain on your web server is expected to have a ``stats'' dir. I name mine ``stats'' and locate in their DocumentRoot, owned by root so that the user doesn't delete it.  This sub first goes through the list of files in (by default) /var/log/apache/tmp/doms, which is a file for each vhost. The file name matches the vhost name the contents are the log entries that correspond to that vhost.</p>
+<p>If the file is zero bytes, it deletes it as there is nothing to do.</p>
+<p>Otherwise, it gathers the vhost name from the file and checks the %domains hash to see if a directory path exists for that vhost. If no hash entry is found or the entry is not a directory, then we declare the hits unmatched and discard them.</p>
+<p>For log files with entries, we check inside the docroot for a stats directory. If no stats directory exists, then we discard those entries as well.</p>
+<p>
+</p>
+<hr />
+<h1><a name="feed_the_machine">feed_the_machine</a></h1>
+<p>feed_the_machine takes the sorted vhost logs and feeds them into the stats processor that you chose.</p>
+<p>
+</p>
+<hr />
+<h1><a name="sort_vhost_logs">sort_vhost_logs</a></h1>
+<p>At this point, we'll have collected the Apache logs from each web server and split them up based on which vhost they were served for. However, our stats processors (most of them) require the logs to be sorted in cronological date order. So, we open up each vhosts logs for the day, read them into a hash, sort them based on their log entry date, and then write them back out.</p>
+<p>
+</p>
+<hr />
+<h1><a name="split_logs_to_vhosts">split_logs_to_vhosts</a></h1>
+<p>After collecting the log files from each server in the cluster, we need to split them up based upon the vhost they were intended for. This sub does that.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Matt Simerson &lt;<a href="mailto:matt@tnpi.biz">matt@tnpi.biz</a>&gt;</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs">BUGS</a></h1>
+<p>None known. Report any to author.</p>
+<p>
+</p>
+<hr />
+<h1><a name="todo">TODO</a></h1>
+<p>Support for analog.</p>
+<p>Support for individual webalizer.conf file for each domain</p>
+<p>Delete log files older than X days/month</p>
+<p>Do something with error logs (other than just compress)</p>
+<p>If files to process are larger than 10MB, find a nicer way to sort them rather than reading them all into a hash. Now I create two hashes, one with data and one with dates. I sort the date hash, and using those sorted hash keys, output the data hash to a sorted file. This is necessary as wusage and http-analyze require logs to be fed in chronological order. Take a look at awstats logresolvemerge as a possibility.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="http://www.tnpi.biz/internet/www/logmonster">http://www.tnpi.biz/internet/www/logmonster</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright (c) 2003-2004, The Network People, Inc.
+All rights reserved.</p>
+<p>Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:</p>
+<p>Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.</p>
+<p>Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.</p>
+<p>Neither the name of the The Network People, Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.</p>
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DIS CLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+
+</body>
+
+</html>

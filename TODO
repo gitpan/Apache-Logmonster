@@ -1,0 +1,10 @@
+Add support for analog.
+
+Add support for individual webalizer.conf file for each domain (this will likely not happen until someone submits a diff or pays me to do it as I don't use webalizer any longer).
+
+Delete log files older than X days/month - super low priority, it's easy and low maintenance to manually delete a few months log files when I'm sure I don't need them any longer.
+
+Do something with error logs (other than just compress)
+
+If files to process are larger than 10MB, find a nicer way to sort them rather than reading them all into a hash. Now I create two hashes, one with data and one with dates. I sort the date hash, and using those sorted hash keys, output the data hash to a sorted file. This is necessary as wusage and http-analyze require logs to be fed in chronological order. Take a look at awstats logresolvemerge as a possibility.
+
