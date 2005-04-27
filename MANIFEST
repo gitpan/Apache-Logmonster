@@ -6,6 +6,7 @@ doc/README
 doc/README.html
 FAQ
 INSTALL
+lib/Apache/Logmonster/Perl.pm
 lib/Apache/Logmonster/Utility.pm
 logmonster.conf
 logmonster.pl
@@ -14,5 +15,6 @@ MANIFEST
 META.yml			Module meta-data (added by MakeMaker)
 README
 t/Filehandle.t
+t/Perl.t
 t/Utility.t
 TODO

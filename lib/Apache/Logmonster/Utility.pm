@@ -2,7 +2,7 @@
 use strict;
 
 #
-# $Id: Utility.pm,v 1.3 2004/11/26 18:09:22 matt Exp $
+# $Id: Utility.pm,v 1.4 2005/02/05 18:30:38 matt Exp $
 #
 
 package Apache::Logmonster::Utility;
@@ -240,7 +240,7 @@ sub install_from_sources_php($$$$;$$$)
 
 =head2 file_check_writable
 
-	use Mail::Toaster::Utility;
+	use Apache::Logmonster::Utility;
 	$utility->file_check_writable("/tmp/boogers", $debug) ? print "yes" : print "no";
 
 If the file exists, it checks to see if it's writable. If the file does not exist, then it checks to see if the enclosing directory is writable. 
@@ -629,51 +629,6 @@ $process is the name as it would appear in the process table.
 	$r ? return 1 : return 0;
 };
 
-
-sub mailtoaster(;$)
-{
-
-=head2 mailtoaster
-
-	$utility->mailtoaster();
-
-Downloads and installs Mail::Toaster.
-
-=cut
-
-	my ($self, $debug) = @_;
-
-	my $src = "/usr/local/src";
-	$self->chdir_source_dir($src);
-
-	my $conf = $self->parse_config({file=>"toaster-watcher.conf"});
-	$self->syscmd("rm -rf Mail-Toaster-*");   # nuke any old versions
-	$self->get_file("http://www.tnpi.biz/internet/mail/toaster/Mail-Toaster.tar.gz");
-	$self->archive_expand("Mail-Toaster.tar.gz");
-
-	foreach my $file ( $self->get_dir_files($src) )
-	{
-		if ( $file =~ /Mail-Toaster-/ ) 
-		{
-			chdir($file);
-			$self->syscmd("perl Makefile.PL");
-			$self->syscmd("make test");
-			if ( -e "/usr/local/etc/toaster-watcher.conf" ) {
-				$self->syscmd("make conf");
-			} else {
-				$self->syscmd("make newconf");
-			};
-			unless ($conf && $conf->{'preserve_cgifiles'}) {
-				$self->syscmd("make cgi");
-			};
-			$self->syscmd("make install");
-			chdir("..");
-			$self->syscmd("rm -rf $file");
-			last;
-		};
-	};
-};
-
 sub files_diff ($$;$$)
 {
 
@@ -704,7 +659,7 @@ return 0 if files are the same, 1 if they are different, and -1 on error.
 	} 
 	else 
 	{
-		eval { require Mail::Toaster::Perl }; my $perl = Mail::Toaster::Perl->new;
+		eval { require Apache::Logmonster::Perl }; my $perl = Apache::Logmonster::Perl->new;
 		$perl->module_load( {module=>"Digest::MD5", ports_name=>"p5-Digest-MD5", ports_group=>"security"} );
 
 		my @md5sums;
@@ -1088,7 +1043,7 @@ returned is an array:
 
 =cut
 
-	eval { require Mail::Toaster::Perl }; my $perl = Mail::Toaster::Perl->new;
+	eval { require Apache::Logmonster::Perl }; my $perl = Apache::Logmonster::Perl->new;
 	$perl->module_load( {module=>"Date::Format", ports_name=>"p5-TimeDate", ports_group=>"devel"} );
 
 	if ($bump) 
@@ -1124,8 +1079,8 @@ sub get_file($;$)
 
 =head2 get_file
 
-	use Mail::Toaster::Utility;
-	my $utility = new Mail::Toaster::Utility;
+	use Apache::Logmonster::Utility;
+	my $utility = new Apache::Logmonster::Utility;
 
 	$utility->get_file($url, $debug);
 
@@ -1170,8 +1125,8 @@ Returns 1 for success, 0 for failure.
 
 =head2 answer
 
-	use Mail::Toaster::Utility;
-	my $utility = Mail::Toaster::Utility->new();
+	use Apache::Logmonster::Utility;
+	my $utility = Apache::Logmonster::Utility->new();
 
 	my $answer = $utility->answer("question", $default, $timer)
 

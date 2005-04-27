@@ -29,6 +29,14 @@ What is supposed to be in vhost?
             files, each containing the VirtualHost and related directives
             for that Apache vhost.
 
+How do I enable it for a virtual domain?
+            Simply create the directory ("stats" by default) within the
+            DocumentRoot of the virtual host. For example, the docroot for
+            example.com is /usr/home/example.com/html. To enable virtual
+            host processing, create the directory
+            /usr/home/example.com/html/stats. Their statistics will be
+            processed.
+
 How do my logs need to be set up?
             While this may not work for everyone, it works very well for me
             on the several of the web farms that I manage:
@@ -98,4 +106,23 @@ Can you explain how to use the -b stuff?
             -b7". Logmonster will dutifully process the logs from 7 days ago
             (after confirming the date with you). Then run again with "-d
             -b6", etc until you're current.
+
+Can I use this with web servers other than Apache?
+            Absolutely. Set up a configuration file with your vhost
+            information in it and point logmster at it. The format for each
+            vhost is as follows:
+
+              <VirtualHost>
+                ServerName www.tnpi.biz
+                ServerAlias www.thenetworkpeople.biz *.tnpi.biz
+                DocumentRoot /home/tnpi.biz/html
+              </VirtualHost>
+
+            Create as many vhost directives as you'd like and logmonster
+            will parse them all. When you make changes to your web server,
+            update this file as well.
+
+            All the other rules apply equally, you'll want to use Apache's
+            ELF with the virtual hostname appended to the logs and pipe the
+            logs to cronolog for reasons mentioned elsewhere.
 

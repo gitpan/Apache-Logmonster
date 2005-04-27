@@ -1,4 +1,26 @@
 
+2.75  - Feb 05, 2005
+
+ - you can now select which stats processor is used for each
+     virtual host. Create a .processor file in the stats dir and
+     place the name of the processor on the first line.
+ - test to make sure the log file exists before trying to 
+     compress it (supresses spurious warnings)
+ - If vhosts are all in a directory, skip any files that end
+     with ~ (vim) or .bak (user). 
+ - the code that hashed the domain list collected the settings
+     from httpd.conf and stuffed them into a hash with the name
+     of the vhost. This worked great, as long as ServerName was
+     the first declaration in your httpd.conf. I discovered this
+     fails otherwise. Now it stuffs the settings into a hash
+     and then, after all the data is collected, moves the data
+     into a new hash keyed off the vhost servername. The function
+     now works regardless of order in the vhost container.
+ - If a perl module was missing, the script would fail after 
+     attempting to load Mail::Toaster::Perl (which may not exist)
+     Added Apache::Logmonster::Perl to distro
+
+
 2.74  - Nov 26, 2004
  - package is now named Apache::Logmonster to fit nicely
    into a CPAN category

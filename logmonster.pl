@@ -6,7 +6,7 @@ package Apache::Logmonster;
 #use warnings;
 use vars qw($VERSION);
 
-$VERSION  = '2.74';
+$VERSION  = '2.75';
 
 =head1 NAME
 
@@ -101,13 +101,12 @@ Allow Logmonster to make your life easier by handling your log processing. Enjoy
 
 =cut
 
-
 #######################################################################
 #      System Settings! Don't muck with anything below this line      #
 #######################################################################
 
 use vars qw/ $opt_b $opt_d $opt_h $opt_m $opt_n $opt_q $opt_r $opt_v
-	$clean $countlog $stats $host_count /;
+	$clean $countlog $awstats $webalizer $http_analyze $host_count /;
 use FileHandle;
 use Getopt::Std;
 getopts('b:dhmnqrv');
@@ -117,18 +116,16 @@ use Apache::Logmonster::Utility 1; my $utility = Apache::Logmonster::Utility->ne
 
 $|++;
 
-my $header   = "\n\t\t Log Monster $VERSION by Matt Simerson \n\n";
-my $debug    = 0; $debug = 1 if $opt_v;
-my $quiet    = 0; $quiet = 1 if $opt_q;   # for cron use
-my $conf     = $utility->parse_config( {file =>"logmonster.conf"});
+my $header    = "\n\t\t Log Monster $VERSION by Matt Simerson \n\n";
+my $debug     = 0; $debug = 1 if $opt_v;
+my $quiet     = 0; $quiet = 1 if $opt_q;   # for cron use
+my $conf      = $utility->parse_config( {file =>"logmonster.conf"});
 check_config ( $conf );
 
-if ( $conf->{'processor'} eq "awstats" )
-{
-	$stats = $utility->find_the_bin("awstats.pl", "/usr/local/www/cgi-bin");
-} else {
-	$stats = $utility->find_the_bin($conf->{'processor'}, "/usr/local/www/cgi-bin");
-};
+$awstats      = $utility->find_the_bin("awstats.pl", "/usr/local/www/cgi-bin");
+$webalizer    = $utility->find_the_bin("webalizer");
+$http_analyze = $utility->find_the_bin("http-analyze");
+
 my $logdir = get_log_dir($conf->{'logbase'});
 
 report_hits ($logdir) if ($opt_r);
@@ -293,25 +290,32 @@ feed_the_machine takes the sorted vhost logs and feeds them into the stats proce
 			next;
 		};
 
+		if ( -f "$docroot/$statsdir/.processor" ) {
+			$processor = `head -n1 $docroot/$statsdir/.processor`;
+			chomp $processor;
+		} else {
+			$processor = $vals->{'processor'};
+		};
+
 		if ($processor eq "webalizer") 
 		{
-			$cmd = "$stats -n $domain -o $docroot/$statsdir $file";
-			printf "$stats -n %-20s -o $docroot/$statsdir\n", $domain unless $quiet;
-			printf $Report "$stats -n %-20s -o $docroot/$statsdir\n", $domain;
+			$cmd = "$webalizer -n $domain -o $docroot/$statsdir $file";
+			printf "$webalizer -n %-20s -o $docroot/$statsdir\n", $domain unless $quiet;
+			printf $Report "$webalizer -n %-20s -o $docroot/$statsdir\n", $domain;
 		}
 		elsif ($processor eq "http-analyze")
 		{
-			$cmd = "$stats -S $domain -o $docroot/$statsdir $file";
-			printf "$stats -S %-20s -o $docroot/$statsdir\n", $domain unless $quiet;
-			printf $Report "$stats -S %-20s -o $docroot/$statsdir\n", $domain;
+			$cmd = "$http_analyze -S $domain -o $docroot/$statsdir $file";
+			printf "$http_analyze -S %-20s -o $docroot/$statsdir\n", $domain unless $quiet;
+			printf $Report "$http_analyze -S %-20s -o $docroot/$statsdir\n", $domain;
 		}
 		elsif ($processor eq "awstats")
 		{
 			check_awstats_file($domain, "$docroot/$statsdir");
 
-			$cmd = "$stats -config=$domain -logfile=$file";
-			printf "$stats for \%-20s to $docroot/$statsdir\n", $domain unless $quiet;
-			printf $Report "$stats for \%-20s to $docroot/$statsdir\n", $domain;
+			$cmd = "$awstats -config=$domain -logfile=$file";
+			printf "$awstats for \%-20s to $docroot/$statsdir\n", $domain unless $quiet;
+			printf $Report "$awstats for \%-20s to $docroot/$statsdir\n", $domain;
 		}
 		else
 		{
@@ -693,6 +697,8 @@ sub get_domain_list($;$)
 
 		foreach my $file ( @files ) 
 		{
+			next if $file =~ /~$/;     # ignore vim's backup files
+			next if $file =~ /.bak$/;  # ignore .bak files
 			my ($vhosts) = get_virtual_domains_from_file($file, $debug);
 
 			foreach ( keys %$vhosts ) 
@@ -722,6 +728,7 @@ sub get_virtual_domains_from_file($;$)
 
 	my (%vhosts, $vhost);
 	my $in = 0;
+	my $count = 0;
 
 	print "\nGetVirtualDomains: retrieving from $file\n" if $debug;
 	print $Report "GetVirtualDomains: retrieving from $file...";
@@ -736,6 +743,7 @@ sub get_virtual_domains_from_file($;$)
 			if ( $lline=~/^[\s+]?<virtualhost/ ) 
 			{
 				$in = 1;
+				$count++;
 				print "\n\topening: $lline\n" if $debug;
 			};
 		}
@@ -766,7 +774,8 @@ sub get_virtual_domains_from_file($;$)
 					my ($servername) = $lline =~ /([a-z0-9-\.]+)(:\d+)?(\s+)?$/;
 					$vhost = $servername;
 					print "\t\tservername: $servername.\n" if $debug;
-					$vhosts{$vhost}{'name'} = $servername;
+					$vhosts{$count}{'name'} = $servername;
+					#$vhosts{$vhost}{'name'} = $servername;
 				}
 				elsif ($lline =~ /serveralias/)
 				{
@@ -775,13 +784,15 @@ sub get_virtual_domains_from_file($;$)
 					shift @val;                       # get rid of serveralias
 					my $aliases = join(":", @val);    # pack them together with :'s in a string
 					print "\t\taliases are: $aliases\n" if $debug;
-					$vhosts{$vhost}{'aliases'} = $aliases;
+					$vhosts{$count}{'aliases'} = $aliases;
+					#$vhosts{$vhost}{'aliases'} = $aliases;
 				} 
 				elsif ($lline =~ /documentroot/)
 				{
 					my ($docroot) = $lline =~ /documentroot[\s+]["]?(.*?)["]?[\s+]?$/;
 					print "\t\tdocroot: $docroot\n" if $debug;
-					$vhosts{$vhost}{'docroot'} = $docroot;
+					$vhosts{$count}{'docroot'} = $docroot;
+					#$vhosts{$vhost}{'docroot'} = $docroot;
 				} 
 				else {
 					#print "unknown: $line\n" if $debug;
@@ -801,8 +812,16 @@ sub get_virtual_domains_from_file($;$)
 		};
 	}
 
+	# convert the hash keys from an incrementing number to the hashes domain name
+	my %tmp;
+	foreach ( keys %vhosts )
+	{
+		my $vhost_name = $vhosts{$_}{'name'};
+		$tmp{$vhost_name} = $vhosts{$_};
+	}
+
 	print $Report "done\n";
-	return \%vhosts;
+	return \%tmp;
 };
 
 sub fetch_log_files($)
@@ -859,15 +878,25 @@ sub fetch_log_files($)
 			}
 			else
 			{
-				print "gzipping $logfile on $host\n" unless $quiet;
-				print $Report "syscmd: $ssh $host $gzip $logfile\n";
-				$r = $utility->syscmd("$ssh $host $gzip $logfile");
-				print $Report "syscmd: error result: $r\n" if ($r != 0);
+				print "checking for $logfile on $host..." unless $quiet;
+				$r = system "$ssh $host test -f $logfile";
+				unless ($quiet) { $r ? print "no.\n" : print "yes..."; };
+				unless ($r) {
+					print "gzipping.\n" unless $quiet;
+					print $Report "syscmd: $ssh $host $gzip $logfile\n";
+					$r = $utility->syscmd("$ssh $host $gzip $logfile");
+					print $Report "syscmd: error result: $r\n" if ($r != 0);
+				};
 
-				print "gzipping $errlog on $host\n" unless $quiet;
-				print $Report "syscmd: $ssh $host $gzip $errlog\n";
-				$r = $utility->syscmd("$ssh $host $gzip $errlog") if ( ! $opt_n );
-				print $Report "syscmd: error result: $r\n" if ($r != 0);
+				print "checking for $errlog on $host..." unless $quiet;
+				$r = system "$ssh $host test -f $errlog";
+				unless ($quiet) { $r ? print "no.\n" : print "yes..."; };
+				unless ($r) {
+					print "gzipping.\n" unless $quiet;
+					print $Report "syscmd: $ssh $host $gzip $errlog\n";
+					$r = $utility->syscmd("$ssh $host $gzip $errlog") if ( ! $opt_n );
+					print $Report "syscmd: error result: $r\n" if ($r != 0);
+				};
 			};
 		}
 
@@ -972,17 +1001,17 @@ sub check_flags()
 {
 	if ( $opt_q && $conf->{'processor'} eq "webalizer" ) 
 	{ 
-		$stats = $stats . " -q"; 
+		$webalizer .= " -q"; 
 	};
 
 	if ( $opt_d or $opt_h )
 	{
-		if    ( $conf->{'processor'} eq "webalizer"    ) { $stats = $stats . " -p"; }
-		elsif ( $conf->{'processor'} eq "http-analyze" ) { $stats = $stats . " -d"; };
+		if    ( $conf->{'processor'} eq "webalizer"    ) { $webalizer    .= " -p"; }
+		elsif ( $conf->{'processor'} eq "http-analyze" ) { $http_analyze .= " -d"; };
 	} 
 	elsif ( $opt_m ) 
 	{
-		if    ( $conf->{'processor'} eq "http-analyze" ) { $stats = $stats . " -m"; };
+		if    ( $conf->{'processor'} eq "http-analyze" ) { $http_analyze .= " -m"; };
 	}
 	else 
 	{

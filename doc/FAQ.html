@@ -21,6 +21,7 @@
 	<li><a href="#why_not_use_one_file_per_vhost_so_you_don_t_have_to_split_them">Why not use one file per vhost so you don't have to split them?</a></li>
 	<li><a href="#what_s_the_recommended_way_to_implement_this">What's the recommended way to implement this?</a></li>
 	<li><a href="#can_you_explain_how_to_use_the_b_stuff">Can you explain how to use the -b stuff?</a></li>
+	<li><a href="#can_i_use_this_with_web_servers_other_than_apache">Can I use this with web servers other than Apache?</a></li>
 </ul>
 <!-- INDEX END -->
 
@@ -116,6 +117,19 @@ Compress::Zlib</pre>
 <h1><a name="can_you_explain_how_to_use_the_b_stuff">Can you explain how to use the -b stuff?</a></h1>
 <p>OK, lets say you shut your server down at 0:55 last night to do some system maintenance. You brought it back up at at 1:05 (10 minutes later) but your cron job that runs logmonster at 1:00am didn't run. Easy enough, you just run it on the command line and all is well.</p>
 <p>Now, let's suppose you made an oopsie that's caused logmonster to not run for all of the last week. Your back from vacation and notice the errors in your mailbox because that's where you've configured cron stuff to go, right? Now you set about to fix the problem. The best way to do that is run logmonster with ``-d -b7''. Logmonster will dutifully process the logs from 7 days ago (after confirming the date with you). Then run again with ``-d -b6'', etc until you're current.</p>
+<p>
+</p>
+<hr />
+<h1><a name="can_i_use_this_with_web_servers_other_than_apache">Can I use this with web servers other than Apache?</a></h1>
+<p>Absolutely. Set up a configuration file with your vhost information in it and point logmster at it. The format for each vhost is as follows:</p>
+<pre>
+  &lt;VirtualHost&gt;
+    ServerName www.tnpi.biz
+    ServerAlias www.thenetworkpeople.biz *.tnpi.biz
+    DocumentRoot /home/tnpi.biz/html
+  &lt;/VirtualHost&gt;</pre>
+<p>Create as many vhost directives as you'd like and logmonster will parse them all. When you make changes to your web server, update this file as well.</p>
+<p>All the other rules apply equally, you'll want to use Apache's ELF with the virtual hostname appended to the logs and pipe the logs to cronolog for reasons mentioned elsewhere.</p>
 
 </body>
 
