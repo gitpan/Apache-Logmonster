@@ -1,9 +1,4 @@
 Changes
-doc/FAQ
-doc/FAQ.html
-doc/FAQ.pod
-doc/README
-doc/README.html
 FAQ
 INSTALL
 lib/Apache/Logmonster/Perl.pm

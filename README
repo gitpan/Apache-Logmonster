@@ -11,17 +11,18 @@ DESCRIPTION
     http-analyze, AWstats, etc).
 
   FEATURES
-    Log Retrieval from one or multiple hosts
+    Log Retrieval from one or mnay hosts
     Ouputs to webalizer, http-analyze, and AWstats.
-    Automatic configuration by reading Apache config files.
+    Automatic configuration by reading Apache config files. Generates config
+    files as required (ie, awstats.example.com.conf).
     Outputs stats into each virtual domains stats dir, if that directory
     exists. (HINT: Easy way to enable or disable stats for a virtual host).
+    Can create missing stats directories if desired.
     Efficient: uses Compress::Zlib to read directly from .gz files to
     minimize disk use. Skips processing logs for vhosts with no $statsdir.
     Doesn't sort if you only have logs from one host.
     Flexible: you can run it monthly, daily, or hourly
-    Reporting: saves an on disk activity report and an email friendly
-    report.
+    Reporting: saves an activity report and sends an email friendly report.
     Reliable: lots of error checking so if something goes wrong, it'll give
     you a useful error message.
     Understands and correctly deals with server aliases
@@ -91,9 +92,9 @@ check_stats_dir
     Each domain on your web server is expected to have a "stats" dir. I name
     mine "stats" and locate in their DocumentRoot, owned by root so that the
     user doesn't delete it. This sub first goes through the list of files in
-    (by default) /var/log/apache/tmp/doms, which is a file for each vhost.
-    The file name matches the vhost name the contents are the log entries
-    that correspond to that vhost.
+    (by default) /var/log/apache/tmp/doms, which is a file with the log
+    entries for each vhost. If the file name matches the vhost name, the
+    contents of that log correspond to that vhost.
 
     If the file is zero bytes, it deletes it as there is nothing to do.
 

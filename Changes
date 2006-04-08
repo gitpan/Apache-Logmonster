@@ -1,4 +1,18 @@
 
+	The latest version of this document is always available online:
+      http://www.tnpi.biz/internet/www/logmonster/changelog.shtml
+
+2.77  - 
+
+2.76  - Jun 04, 2005
+
+ - new feature funded by Lewis Bergman: statsdir can now be an 
+     absolute path (ex: /var/www/html). If so, processor output will 
+     be stored in statsdir/vhost. Otherwise, it works as it used to
+     and output goes to vhost/statsdir. This is useful if you have a
+     seperate machine (not the web server) that does the processing
+     and that system does not have access to the vhost docroot.
+
 2.75  - Feb 05, 2005
 
  - you can now select which stats processor is used for each

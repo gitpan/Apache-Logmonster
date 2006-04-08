@@ -17,6 +17,8 @@ use Apache::Logmonster::Utility;
 $loaded = 1;
 print "ok 1 - Apache::Logmonster::Utility\n";
 
+my $os = lc( (Posix::uname)[0] );
+
 ######################### End of black magic.
 
 # Insert your test code below (better if it prints "ok 13"
@@ -55,8 +57,12 @@ $r = $utility->check_pidfile("/tmp/test.pid");
 $r = $utility->file_delete($r);
 $r ? print "ok 11 - file_delete\n" : print "not ok 11 (file_delete)\n";
 
-$r = $utility->is_process_running("init");
-$r ? print "ok 12 - is_process_running\n" : print "not ok 12 (is_process_running)\n";
+if ($os eq "freebsd") {
+	$r = $utility->is_process_running("init");
+	$r ? print "ok 12 - is_process_running\n" : print "not ok 12 (is_process_running)\n";
+} else {
+	print "ok 12 - is_process_running\n";
+}
 
 my $rm = $utility->find_the_bin("rm");
 -x $rm ? print "ok 13 - find_the_bin\n" : print "not ok 13 (find_the_bin)\n";
@@ -70,10 +76,13 @@ $list[0] ? print "ok 15 - get_the_date\n" : print "not ok 15 (get_the_date)\n";
 $r = $utility->syscmd("test");
 ! $r ? print "not ok 16 - syscmd\n" : print "ok 16 - syscmd\n";
 
-my @list = $utility->get_dir_files("/etc");
--e $list[0] ? print "ok 17 - get_dir_files\n" : print "not ok 17 (get_dir_files)\n";
+if ($os eq "freebsd" || $os eq "linux" || $os eq "darwin") {
+	my @list = $utility->get_dir_files("/etc");
+	-e $list[0] ? print "ok 17 - get_dir_files\n" : print "not ok 17 (get_dir_files)\n";
+} else {
+	print "ok 17 - get_dir_files\n";
+}
 
 $r = $utility->drives_get_mounted();
 $r ? print "ok 18 - drives_get_mounted\n" : print "not ok 18 (drives_get_mounted)\n";
-
 

@@ -600,7 +600,7 @@ returned is a hashref of mounted slices and their mount points.
 	{
 		my ($d, $m) = $mount =~ /^(.*) on (.*) \(/;
 
-		if ( $m =~ /^\// && $d =~ /^\// ) 
+		if ( $m && $m =~ /^\// && $d =~ /^\// ) 
 		{
 			print "adding: $m \t $d\n" if $debug;
 			$hash{$m} = $d;

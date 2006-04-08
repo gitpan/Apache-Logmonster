@@ -6,21 +6,12 @@ use ExtUtils::MakeMaker;
 sub MY::postamble 
 {
 
-'LOGMONSTER = /Users/matt/Sites/www.tnpi.biz/internet/www/logmonster
+'LOGMONSTER = /Users/Shared/Sites/www.tnpi.biz/internet/www/logmonster
 
 docs:
 	pod2text logmonster.pl   > README
-	pod2text logmonster.pl   > doc/README
-	pod2text doc/FAQ.pod     > FAQ
-	pod2text doc/FAQ.pod     > doc/FAQ
  
 web:
-	pod2html --title="logmonster README" logmonster.pl > doc/README.html
-	pod2html --title="logmonster FAQ"    doc/FAQ.pod   > doc/FAQ.html
-	rm pod2htm*
-	install -m 0644 doc/README.html   $(LOGMONSTER)/README.html
-	install -m 0644 doc/FAQ.html      $(LOGMONSTER)/FAQ.html
-	install -m 0644 Changes           $(LOGMONSTER)/changelog.txt
 	install -m 0644 logmonster.pl     $(LOGMONSTER)/logmonster.pl
 	install -m 0644 logmonster.conf   $(LOGMONSTER)/logmonster.conf
 	mv Apache-Logmonster-$(VERSION).tar.gz $(LOGMONSTER)/Logmonster.tar.gz

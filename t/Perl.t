@@ -2,7 +2,7 @@
 # `make test'. After `make install' it should work as `perl test.pl'
 
 #
-# $Id: Perl.t,v 1.1 2005/02/05 18:30:38 matt Exp $
+# $Id: Perl.t,v 1.2 2005/05/02 21:05:59 matt Exp $
 #
 
 ######################### We start with some black magic to print on failure.

@@ -6,7 +6,7 @@ package Apache::Logmonster;
 #use warnings;
 use vars qw($VERSION);
 
-$VERSION  = '2.75';
+$VERSION  = '2.77';
 
 =head1 NAME
 
@@ -24,19 +24,19 @@ A tool to collect log files from multiple Apache web servers, split them based o
 
 =over
 
-=item Log Retrieval from one or multiple hosts
+=item Log Retrieval from one or mnay hosts
 
 =item Ouputs to webalizer, http-analyze, and AWstats.
 
-=item Automatic configuration by reading Apache config files.
+=item Automatic configuration by reading Apache config files. Generates config files as required (ie, awstats.example.com.conf).
 
-=item Outputs stats into each virtual domains stats dir, if that directory exists. (HINT: Easy way to enable or disable stats for a virtual host).
+=item Outputs stats into each virtual domains stats dir, if that directory exists. (HINT: Easy way to enable or disable stats for a virtual host). Can create missing stats directories if desired.
 
 =item Efficient: uses Compress::Zlib to read directly from .gz files to minimize disk use. Skips processing logs for vhosts with no $statsdir. Doesn't sort if you only have logs from one host.
 
 =item Flexible: you can run it monthly, daily, or hourly
 
-=item Reporting: saves an on disk activity report and an email friendly report.
+=item Reporting: saves an activity report and sends an email friendly report.
 
 =item Reliable: lots of error checking so if something goes wrong, it'll give you a useful error message.
 
@@ -123,6 +123,8 @@ my $conf      = $utility->parse_config( {file =>"logmonster.conf"});
 check_config ( $conf );
 
 $awstats      = $utility->find_the_bin("awstats.pl", "/usr/local/www/cgi-bin");
+unless (-x $awstats) { warn "HEY, I can't find awstats! Consider editing $0 and setting the path to it in the find_the_bin call" };
+
 $webalizer    = $utility->find_the_bin("webalizer");
 $http_analyze = $utility->find_the_bin("http-analyze");
 
@@ -214,7 +216,7 @@ sub check_stats_dir($$)
 
 =head1 check_stats_dir
 
-Each domain on your web server is expected to have a "stats" dir. I name mine "stats" and locate in their DocumentRoot, owned by root so that the user doesn't delete it.  This sub first goes through the list of files in (by default) /var/log/apache/tmp/doms, which is a file for each vhost. The file name matches the vhost name the contents are the log entries that correspond to that vhost.
+Each domain on your web server is expected to have a "stats" dir. I name mine "stats" and locate in their DocumentRoot, owned by root so that the user doesn't delete it.  This sub first goes through the list of files in (by default) /var/log/apache/tmp/doms, which is a file with the log entries for each vhost. If the file name matches the vhost name, the contents of that log correspond to that vhost.
 
 If the file is zero bytes, it deletes it as there is nothing to do. 
 
@@ -234,29 +236,32 @@ For log files with entries, we check inside the docroot for a stats directory. I
 			next;
 		};
 
-		#my $domain  = (StripLastDirFromPath($file))[1];
 		use File::Basename;
-		my $domain  = fileparse($file);
-		my $docroot = $domains->{$domain}->{'docroot'};
+		my $domain   = fileparse($file);
+		my $docroot  = $domains->{$domain}->{'docroot'};
+		my $statsdir = $conf->{'statsdir'};
 
-		print "check_stats_dir: checking for $domain: ($docroot)\n" if $debug;
-
-		unless ( $docroot and -d $docroot ) 
-		{
-			warn "WARN: docroot does not exist for $domain! Discarding logs.\n" unless $quiet;
-			print $Report "WARN: docroot does not exist for $domain! Discarding logs.\n";
-			$utility->file_delete($file) if $clean;
-			next;
+		if ($statsdir =~ /^\// ) {  # fully qualified (starts with /)
+			$statsdir = "$statsdir/$domain";
+		} else {
+			$statsdir = "$docroot/$statsdir";
 		};
 
-		my $stats = "$docroot/" . $conf->{'statsdir'};
-		unless ( -d $stats ) 
+		print "check_stats_dir: checking for $domain: ($statsdir)\n" if $debug;
+
+		unless ( $statsdir and -d $statsdir ) 
 		{
-			warn "WARN: docroot/stats does not exist for $domain! Discarding logs. ($stats)\n" unless $quiet;
-			print $Report "WARN: docroot/stats does not exist for $domain! Discarding logs. ($stats)\n";
-			$utility->file_delete($file) if $clean;
-		};
-	};
+			if ( $conf->{'statsdir_policy'} eq "create" ) {
+				print "check_stats_dir: does not exist, creating $statsdir....";
+				$utility->chdir_source_dir($statsdir);
+				print "done.\n";
+			} else {
+				warn "WARN: stats dir does not exist for $domain! Discarding logs. ($statsdir)\n" unless $quiet;
+				print $Report "WARN: stats dir does not exist for $domain! Discarding logs ($statsdir).\n";
+				$utility->file_delete($file) if $clean;
+			}
+		}
+	}
 };
 
 sub feed_the_machine($)
@@ -273,7 +278,6 @@ feed_the_machine takes the sorted vhost logs and feeds them into the stats proce
 	my ($cmd, $r);
 
 	my $tmpdir    = $vals->{'tmpdir'};
-	my $statsdir  = $vals->{'statsdir'};
 	my $processor = $vals->{'processor'};
 
 	foreach my $file ( $utility->get_dir_files("$tmpdir/doms") )
@@ -281,17 +285,24 @@ feed_the_machine takes the sorted vhost logs and feeds them into the stats proce
 		next if ( $file =~ /\.bak$/ );
 
 		use File::Basename;
-		my $domain  = fileparse($file);
-		my $docroot = $domains->{$domain}->{'docroot'};
+		my $domain   = fileparse($file);
+		my $docroot  = $domains->{$domain}->{'docroot'};
+		my $statsdir = $vals->{'statsdir'};
 
-		unless ( -d "$docroot/$statsdir" )
+		if ($statsdir =~ /^\// ) {  # fully qualified (starts with /)
+			$statsdir = "$statsdir/$domain";
+		} else {
+			$statsdir = "$docroot/$statsdir";
+		};
+
+		unless ( -d $statsdir )
 		{
-			print "skipping $file because $docroot/$statsdir is not a directory.\n" unless $quiet;
+			print "skipping $file because $statsdir is not a directory.\n" unless $quiet;
 			next;
 		};
 
-		if ( -f "$docroot/$statsdir/.processor" ) {
-			$processor = `head -n1 $docroot/$statsdir/.processor`;
+		if ( -f "$statsdir/.processor" ) {
+			$processor = `head -n1 $statsdir/.processor`;
 			chomp $processor;
 		} else {
 			$processor = $vals->{'processor'};
@@ -299,23 +310,23 @@ feed_the_machine takes the sorted vhost logs and feeds them into the stats proce
 
 		if ($processor eq "webalizer") 
 		{
-			$cmd = "$webalizer -n $domain -o $docroot/$statsdir $file";
-			printf "$webalizer -n %-20s -o $docroot/$statsdir\n", $domain unless $quiet;
-			printf $Report "$webalizer -n %-20s -o $docroot/$statsdir\n", $domain;
+			$cmd = "$webalizer -n $domain -o $statsdir $file";
+			printf "$webalizer -n %-20s -o $statsdir\n", $domain unless $quiet;
+			printf $Report "$webalizer -n %-20s -o $statsdir\n", $domain;
 		}
 		elsif ($processor eq "http-analyze")
 		{
-			$cmd = "$http_analyze -S $domain -o $docroot/$statsdir $file";
-			printf "$http_analyze -S %-20s -o $docroot/$statsdir\n", $domain unless $quiet;
-			printf $Report "$http_analyze -S %-20s -o $docroot/$statsdir\n", $domain;
+			$cmd = "$http_analyze -S $domain -o $statsdir $file";
+			printf "$http_analyze -S %-20s -o $statsdir\n", $domain unless $quiet;
+			printf $Report "$http_analyze -S %-20s -o $statsdir\n", $domain;
 		}
 		elsif ($processor eq "awstats")
 		{
-			check_awstats_file($domain, "$docroot/$statsdir");
+			check_awstats_file($domain, $statsdir);
 
 			$cmd = "$awstats -config=$domain -logfile=$file";
-			printf "$awstats for \%-20s to $docroot/$statsdir\n", $domain unless $quiet;
-			printf $Report "$awstats for \%-20s to $docroot/$statsdir\n", $domain;
+			printf "$awstats for \%-20s to $statsdir\n", $domain unless $quiet;
+			printf $Report "$awstats for \%-20s to $statsdir\n", $domain;
 		}
 		else
 		{
@@ -334,13 +345,16 @@ feed_the_machine takes the sorted vhost logs and feeds them into the stats proce
 		if ( -d "$docroot/$vals->{'userlogs'}" )
 		{
 			my $vlog = "$docroot/$vals->{'userlogs'}/$vals->{'access'}";
+			($dd, $mm, $yy, $lm, $hh, $mn) = $utility->get_the_date(1.04);
 			unless ( -f $vlog )
 			{
 				use File::Copy;
-				copy($file, $vlog);
+				copy($file, "$vlog-$yy-$mm-$dd");
+				#copy($file, $vlog);
 			}
 			else {
-				$utility->syscmd("cat $file >> $vlog");
+				$utility->syscmd("cat $file >> $vlog-$yy-$mm-$dd");
+				#$utility->syscmd("cat $file >> $vlog");
 			};
 		};
 
@@ -368,22 +382,20 @@ sub check_awstats_file($$)
 		mkdir( $statsdir, 0755) or warn "Failed to create $statsdir: $!\n";
 	};
 
+	unless ( -f "$statsdir/awstats.conf" )
+	{
+		$utility->get_file("http://www.tnpi.biz/internet/www/logmonster/awstats.conf");
+		move("awstats.conf", "$statsdir/awstats.conf") or warn "couldn't install $statsdir/awstats.conf: $!\n";
+	}
+
 	unless ( -f $conf )
 	{
-		unless ( -f "$statsdir/awstats.conf" )
-		{
-			$utility->get_file("http://www.tnpi.biz/internet/www/logmonster/awstats.conf");
-			move("awstats.conf", "$statsdir/awstats.conf") or warn "couldn't install $statsdir/awstats.conf: $!\n";
-		}
-
-		use File::Copy;
-		copy("$statsdir/awstats.conf", $conf) or warn "couldn't copy awstats.conf to $conf: $!\n";
-
-		my @lines  = "SiteDomain = $domain";
+		my @lines  = 'Include "/etc/awstats/awstats.conf"';
+		push @lines, "SiteDomain = $domain";
 		push @lines, "DirData = $vstatsdir";
 		push @lines, "HostAliases = $domain localhost 127.0.0.1";
 
-		$utility->file_append($conf, \@lines);
+		$utility->file_write($conf, @lines);
 	}
 }
 
@@ -418,7 +430,6 @@ At this point, we'll have collected the Apache logs from each web server and spl
 			print $Report "sort_vhost_logs: logfile $file is greater than 10MB\n";
 		};
 
-		#open (LOG, $file) or die "Couldn't open $file: $!\n";
 		unless ( open LOG, $file )
 		{
 			warn "sort_vhost_logs: WARN: couldn't open $file: $!\n";
@@ -746,59 +757,56 @@ sub get_virtual_domains_from_file($;$)
 				$count++;
 				print "\n\topening: $lline\n" if $debug;
 			};
+			next LINE;
 		}
-		else 
+
+		if ( $lline =~ /^[\s+]?<\/virtualhost/ )  
 		{
-			if ( $lline =~ /^[\s+]?<\/virtualhost/ )  
-			{
-				unless ($vhost) { print "invalid closing vhost tag in file $file!\n" };
-				print "\tclosing: $lline\n" if $debug;
-				undef $vhost;
-				$in = 0;
-				next LINE;
-			} 
-			else 
-			{
-				if ($lline =~ /servername/)
-				{
-					# we need to strip off any trailing port values(:80)  (thanks Raymond Dujkxhoorn)
+			print "invalid closing vhost tag in file $file!\n" unless ($vhost);
+			print "\tclosing: $lline\n" if $debug;
+			undef $vhost;
+			$in = 0;
+			next LINE;
+		} 
 
-					# parse this type of line: "  ServerName  foo.com:80  ";
-					# regexp explanation:
-					#    \b - word boundary
-					#    \bservername\b grabs any leading spaces, the word servername, and any trailing spaces
-					#    (.*?) grabs any characters (non greedy)
-					#    (:\d+)? grabs any optional instance of numeric digits preceded by a :
-					#    (\s+)?$ grabs zero or more white space characters immediately before the end of the line
+		if ($lline =~ /servername/)
+		{
+			# we need to strip off any trailing port values(:80)  (thanks Raymond Dujkxhoorn)
 
-					my ($servername) = $lline =~ /([a-z0-9-\.]+)(:\d+)?(\s+)?$/;
-					$vhost = $servername;
-					print "\t\tservername: $servername.\n" if $debug;
-					$vhosts{$count}{'name'} = $servername;
-					#$vhosts{$vhost}{'name'} = $servername;
-				}
-				elsif ($lline =~ /serveralias/)
-				{
-					if ($lline =~ /\s+serveralias/) { ($lline) = $lline =~ /\s+(.*)/ };
-					my @val = split(/\s+/, $lline);
-					shift @val;                       # get rid of serveralias
-					my $aliases = join(":", @val);    # pack them together with :'s in a string
-					print "\t\taliases are: $aliases\n" if $debug;
-					$vhosts{$count}{'aliases'} = $aliases;
-					#$vhosts{$vhost}{'aliases'} = $aliases;
-				} 
-				elsif ($lline =~ /documentroot/)
-				{
-					my ($docroot) = $lline =~ /documentroot[\s+]["]?(.*?)["]?[\s+]?$/;
-					print "\t\tdocroot: $docroot\n" if $debug;
-					$vhosts{$count}{'docroot'} = $docroot;
-					#$vhosts{$vhost}{'docroot'} = $docroot;
-				} 
-				else {
-					#print "unknown: $line\n" if $debug;
-				};
-			};
-		}; 
+			# parse this type of line: "  ServerName  foo.com:80  ";
+			# regexp explanation:
+			#    \b - word boundary
+			#    \bservername\b grabs any leading spaces, the word servername, and any trailing spaces
+			#    (.*?) grabs any characters (non greedy)
+			#    (:\d+)? grabs any optional instance of numeric digits preceded by a :
+			#    (\s+)?$ grabs zero or more white space characters immediately before the end of the line
+
+			my ($servername) = $lline =~ /([a-z0-9-\.]+)(:\d+)?(\s+)?$/;
+			$vhost = $servername;
+			print "\t\tservername: $servername.\n" if $debug;
+			$vhosts{$count}{'name'} = $servername;
+			#$vhosts{$vhost}{'name'} = $servername;
+		}
+		elsif ($lline =~ /serveralias/)
+		{
+			if ($lline =~ /\s+serveralias/) { ($lline) = $lline =~ /\s+(.*)/ };
+			my @val = split(/\s+/, $lline);
+			shift @val;                       # get rid of serveralias
+			my $aliases = join(":", @val);    # pack them together with :'s in a string
+			print "\t\taliases are: $aliases\n" if $debug;
+			$vhosts{$count}{'aliases'} = $aliases;
+			#$vhosts{$vhost}{'aliases'} = $aliases;
+		} 
+		elsif ($lline =~ /documentroot/)
+		{
+			my ($docroot) = $lline =~ /documentroot[\s+]["]?(.*?)["]?[\s+]?$/;
+			print "\t\tdocroot: $docroot\n" if $debug;
+			$vhosts{$count}{'docroot'} = $docroot;
+			#$vhosts{$vhost}{'docroot'} = $docroot;
+		} 
+		else {
+			#print "unknown: $line\n" if $debug;
+		};
 	};
 
 	# create the domlist hash if necessary
