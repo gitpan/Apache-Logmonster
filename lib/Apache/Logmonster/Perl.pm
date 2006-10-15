@@ -1,26 +1,305 @@
 #!/usr/bin/perl
 use strict;
+use warnings;
 
 #
-# $Id: Perl.pm,v 1.1 2005/02/05 18:30:38 matt Exp $
+# $Id: Perl.pm 523 2006-10-15 04:33:38Z matt $
 #
 
 package Apache::Logmonster::Perl;
 
 use Carp;
-use vars qw($VERSION);
+use English qw( -no_match_vars );
+use Params::Validate qw( :all);
 
-$VERSION = '4.07';
+use vars qw($VERSION $err);
 
-my $os = $^O;
+$VERSION = '5.00';
 
 use lib "lib";
-use lib "../..";
-require Apache::Logmonster::Utility; my $utility = new Apache::Logmonster::Utility;
+
+sub new {
+    my ( $class, $name ) = @_;
+    my $self = { name => $name };
+    bless( $self, $class );
+    return $self;
+}
+
+sub check {
+
+    my $self = shift;
+    
+    my %p = validate( @_, {
+	        'min'    => { type=>SCALAR, optional=>1, default=>5.006001},
+	        'timer'  => { type=>SCALAR, optional=>1, default=>60 },
+            'debug'  => { type=>BOOLEAN, optional=>1, default=>1 },
+        },
+    );
+
+	my ($min, $timer, $debug) = ( $p{'min'}, $p{'timer'}, $p{'debug'} );
+
+    unless ( $] < $min ) {    # $] is the version of perl  we're running
+        print "using Perl " . $] . " which is current enough, skipping.\n"
+          if $debug;
+        return 1;
+    }
+
+    # we probably can't install anything unless we're root
+    return 0 unless ( $REAL_USER_ID eq 0 );
+
+    warn qq{\a\a\a
+**************************************************************************
+**************************************************************************
+  Version $] of perl is NOT SUPPORTED by several mail toaster components. 
+  You should strongly consider upgrading perl before continuing.  Perl 
+  version $min is the lowest version supported and 5.8 is recommended.
+
+  Press return to begin upgrading your perl... (or Control-C to cancel)
+**************************************************************************
+**************************************************************************
+	};
+
+    print "You should upgrade to perl 5.8.x as it is quite stable, in 
+widespread use, and many useful perl programs such as SpamAssassin require
+it for full functionality.";
+
+    my $version = "perl-5.8";
+
+    require Apache::Logmonster::Utility;
+    my $utility = Apache::Logmonster::Utility->new;
+
+    if (
+        $utility->yes_or_no(
+            question => "Would you like me to install 5.8?",
+            timeout  => 20
+        )
+      )
+    {
+        $version = "perl-5.8";
+    }
+
+    $self->perl_install( version => $version );
+}
+
+sub has_module {
+    my $self = shift;
+    my($name, $ver) = @_;
+
+    ## no critic ( ProhibitStringyEval )
+    eval("use $name" . ($ver ? " $ver;" : ";"));
+    ## use critic
+
+    # returns the status of the eval error
+    !$EVAL_ERROR;
+};
+
+sub module_install {
+    my $self = shift;
+
+    # parameter validation here
+    my %p = validate( @_, {
+            'conf'    => { type=>HASHREF|UNDEF, optional=>1, },
+            'module'  => { type=>SCALAR,  optional=>0, },
+            'archive' => { type=>SCALAR,  optional=>0, },
+            'site'    => { type=>SCALAR,  optional=>0, },
+            'url'     => { type=>SCALAR,  optional=>0, },
+            'src'     => { type=>SCALAR,  optional=>1, default=>"/usr/local/src" },
+            'targets' => { type=>ARRAYREF,optional=>1, },
+            'fatal'   => { type=>BOOLEAN, optional=>1, default=>1 },
+            'debug'   => { type=>BOOLEAN, optional=>1, default=>1 },
+        },
+    );
+
+    my ( $conf, $module, $archive, $site, $url, 
+         $src, $targets, $fatal, $debug )
+        = ( $p{'conf'}, $p{'module'}, $p{'archive'}, $p{'site'}, $p{'url'}, 
+            $p{'src'}, $p{'targets'}, $p{'fatal'}, $p{'debug'} );
+
+
+    require Apache::Logmonster::Utility;
+    my $utility = Apache::Logmonster::Utility->new;
+
+    $utility->chdir_source_dir( dir => $src );
+
+    #$utility->syscmd( command=>"rm -rf $module-*" );   # nuke any old versions
+
+    print "checking for previous build sources.\n";
+    if ( -d $module ) {
+        unless ( $utility->source_warning( package=>$module, src=>$src ) ) {
+            carp "\nmodule_install: OK then, skipping install.\n";
+            return 0;
+        }
+        else {
+            $utility->syscmd( command => "rm -rf $module" );
+        }
+    }
+
+    $utility->sources_get(
+        conf    => $conf,
+        site    => $site,
+        url     => $url,
+        package => $module,
+        debug   => $debug,
+    );
+
+    $utility->archive_expand( archive => $module, debug => $debug )
+      or croak "Couldn't expand $module: $!\n";
+
+    my $found;
+    print "looking for $module in $src...";
+    foreach my $file ( $utility->get_dir_files( dir => $src ) ) {
+
+        next if ( $file !~ /$module-/ && $file !~ /$module/ );
+        next if !-d $file;
+
+        print "found: $file\n";
+        $found++;
+        chdir($file);
+
+        my $targets = $targets;
+        unless ( @$targets[0] && @$targets[0] ne "" ) {
+            print "module_install: using default targets.\n";
+            @$targets = ( "perl Makefile.PL", "make", "make install" );
+        }
+
+        print "installing with targets " . join( ", ", @$targets ) . "\n";
+        foreach (@$targets) {
+            if ( ! $utility->syscmd( command => $_ , debug=>$debug ) ) {
+                carp "$_ failed!\n";
+                return;
+            };;
+        }
+
+        chdir("..");
+        $utility->syscmd( command => "rm -rf $file", debug=>$debug );
+        last;
+    }
+
+    $found ? return 1 : return 0;
+}
+
+sub module_load {
+
+    my $self = shift;
+    
+    my %p = validate( @_, {
+            'module'     => { type=>SCALAR,  optional=>0, },
+            'port_name'  => { type=>SCALAR,  optional=>1, },
+            'port_group' => { type=>SCALAR,  optional=>1, },
+            'site'       => { type=>SCALAR,  optional=>1, },
+            'url'        => { type=>SCALAR,  optional=>1, },
+            'archive'    => { type=>SCALAR,  optional=>1, },
+            'warn'       => { type=>BOOLEAN, optional=>1, default=>0  },
+			'timer'      => { type=>SCALAR,  optional=>1, default=>30 },
+            'auto'       => { type=>BOOLEAN, optional=>1, default=>0  },
+            'fatal'      => { type=>BOOLEAN, optional=>1, default=>0  },
+            'debug'      => { type=>BOOLEAN, optional=>1, default=>1  },
+        },
+    );
+
+	my ($module, $port_name, $port_group, $site, 
+        $url, $archive, $warn, $timer )
+        = ( $p{'module'}, $p{'port_name'}, $p{'port_group'}, $p{'site'}, 
+            $p{'url'}, $p{'archive'}, $p{'warn'}, $p{'timer'} );
+
+    # this seems to work most of the time
+    if ( $self->has_module($module) ) {
+        if ( $p{'debug'} ) {
+            eval {
+                require ExtUtils::Installed;
+                my $ext = ExtUtils::Installed->new();
+                $self->_formatted("module_load, checking $module", 
+                    "ok (". $ext->version($module) .")" );
+            };
+        };
+        #$module->import();
+        return 1;
+    };
+
+    # another way to skin the same cat as above
+    #	eval { local $SIG{__DIE__}; require Term::ReadKey };
+    #	if ($@) { #do fun stuff };
+
+    # we probably can't install anything unless we're root
+    unless ( $REAL_USER_ID eq 0 ) 
+    {
+        $err = "Sorry, root permissions are needed to install perl modules";
+        croak $err if $p{'fatal'};
+        carp $err;
+        return;
+    };
+
+    carp "\ncouldn't import $module: $EVAL_ERROR\n";    # show error
+
+    require Apache::Logmonster::Utility;
+    my $utility = Apache::Logmonster::Utility->new;
+
+    if ( ! $p{'auto'} && ! $utility->yes_or_no(
+            question => "\n\nWould you like me to try installing $module: ",
+            timeout  => $timer, )
+    ) {
+        if ($warn) {
+            carp "\n$module is required, you have been warned.\n";
+            return;
+        }
+        else { 
+            croak "\nI'm sorry, $module is required to continue.\n" 
+        }
+    }
+
+    require CPAN;
+    CPAN::Shell->install($module);
+
+    print "testing install...";
+    if ( $self->has_module($module) ) {
+        print "success.\n"; 
+        return 1; 
+    };
+    print "FAILED.\n";
+
+    # finally, try from sources if possible
+    if ( $site && $url ) {
+        print "trying to install from sources\n";
+        $self->module_install(
+            module  => $module,
+            site    => $site,
+            url     => $url,
+            archive => $archive,
+        );
+
+        print "testing install...";
+        if ( $self->has_module($module) ) {
+            print "success.\n";
+            return 1;
+        }
+        print "FAILED.\n";
+    }
+
+    croak "failed to install $module\n" if $p{'fatal'};
+    return;
+}
+
+sub _formatted {
+    my ($self, $mess, $result) = @_;
+    my $dots = '...';
+    my $length_of_mess = length($mess);
+    if ( $length_of_mess < 65 ) {
+        until ( $length_of_mess == 65 ) { $dots .= "."; $length_of_mess++ }
+    }
+    print $mess if $mess;
+    if ($result) {
+        print $dots . $result;
+    }
+    print "\n";
+}
+
+1;
+__END__
+
 
 =head1 NAME
 
-Apache::Logmonster::Perl
+Apache::Logmonster::Perl - perl specific utility subs, check_perl, has_module, install_module, etc
 
 =head1 SYNOPSIS
 
@@ -39,7 +318,9 @@ See the description for each method below.
 
 =head1 METHODS
 
-=head2 new
+=over 8
+
+=item new
 
 To use a a method in this class, you must first request a Apache::Logmonster::Perl object:
 
@@ -48,218 +329,94 @@ To use a a method in this class, you must first request a Apache::Logmonster::Pe
 
 You can then call subsequent methods with $perl->method();
 
-=cut
 
-
-sub new
-{
-	my ($class, $name) = @_;
-	my $self = { name => $name };
-	bless ($self, $class);
-	return $self;
-};
-
-
-
-=head2 check
+=item check
 
 Checks perl to make sure the version is higher than a minimum (supplied) value.
 
-   $perl->check($vals);
+   $perl->check( min=>'5.006001' );
 
-Input is a hashref with at least the following values set: min. If min is unset, it defaults to 5.6.1 (5.006001).
+ arguments required:
+    min - defaults to 5.6.1 (5.006001).
 
-   $perl->check( {min=>5.006001} );
+ arguments optional:
+    timer - default 60 seconds
+    debug
+    
+ usage:
+   $perl->check( min=>5.006001 );
 
 returns 1 for success, 0 for failure.
 
-=cut
 
-sub check
-{
-	my ($self, $vals) = @_;
+=item has_module
 
-	my $min   = $vals->{'min'};   $min   ||= 5.006001;
-	my $timer = $vals->{'timer'}; $timer ||= 60;
-	my $debug = $vals->{'debug'};
+Checks to see if a perl module is installed.
 
-	unless ($] < $min) {
-		print "using Perl " . $] . " which is current enough, skipping.\n" if $debug;
-		return 1;
-	};
+   if ( $perl->has_module("Date::Format") ) {
+       print "yay!\n";
+   };
 
-	# we probably can't install anything unless we're root
-	return 0 unless ( $< eq 0 );
+ arguments required:
+    module - the name of the perl module
 
-	warn qq{\a\a\a
-**************************************************************************
-**************************************************************************
-  Version $] of perl is NOT SUPPORTED by several mail toaster components. 
-  You should strongly consider upgrading perl before continuing.  Perl 
-  version 5.6.1 is the lowest version supported.
-
-  Press return to begin upgrading your perl... (or Control-C to cancel)
-**************************************************************************
-**************************************************************************
-	};
-
-	print "You have two choices: perl 5.6.x or perl 5.8.x. I recommend that if you upgrade
-to perl 5.8.x as it's already quite stable, in widespread use, and many of the new perl programs
-such as SpamAssassin require it for full functionality.";
-
-	my $version = "perl-5.6";
-	if ( $utility->yes_or_no("Would you like me to install 5.8?"), 5 ) {
-		$version = "perl-5.8";
-	};
-
-	$self->perl_install( {version=>$version} );
-};
+ arguments optional:
+    version - minimum version
 
 
-=head2 module_install
+=item module_install
 
 Downloads and installs a perl module from sources.
 
-    $perl->module_install($vals, $conf);
+The arguments get concatenated to a url like this: $site/$url/$module.tar.gz
 
-$vals is a hashref with the following values:
-
-    module  - module name          (CGI)
-    archive - archived module name (CGI-1.35.tar.gz)
-    site    - site to download from
-    url     - path to downloads on site
-    targets - build targets: 
-    
-    
-The values get concatenated to a url like this: $site/$url/$module.tar.gz
-
-$conf is toaster-watcher.conf settings and is optional.
-
-Once downloaded, we expand the archive and attempt to build it. You can optionally pass build targets but if you don't, the default targets are: make, make test, and make install. After install, we clean up the sources and exit. 
+Once downloaded, we expand the archive and attempt to build it. If not set, the default targets are: make, make test, and make install. After install, we clean up the sources and exit. 
 
 This method builds from sources only. Compare to module_load which will attempt to build from FreeBSD ports, CPAN, and then finally resort to sources if all else fails.
 
-returns 1 for success, 0 for failure.
 
-Example:
+ usage:
+    $perl->module_install( module=>"Params::Validate", conf=>$conf );
 
- my $vals = {
-    module   => 'Mail-Toaster',
-    archive  => 'Mail-Toaster-4.01.tar.gz',
-    site     => 'http://www.tnpi.biz',
-    url      => '/internet/mail/toaster/src',
-    targets  => ['perl Makefile.PL', 'make install'],
- };
+ Example:
 
- $perl->module_install($vals);
+    $perl->module_install(
+       module   => 'Mail-Toaster',
+       archive  => 'Mail-Toaster-4.01.tar.gz',
+       site     => 'http://www.tnpi.biz',
+       url      => '/internet/mail/toaster/src',
+       targets  => ['perl Makefile.PL', 'make install'],
+    );
 
-=cut
+ arguments required:
+    module  - module name          (CGI)
+    site    - site to download from
+    url     - path to downloads on site
+    
 
-sub module_install($;$)
-{
-	my ($self, $vals, $conf) = @_;
+ arguments optional:
+    archive - archived module name (CGI-1.35.tar.gz)
+    targets - build targets: 
+    conf    - $conf is toaster-watcher.conf settings, (barely) optional.
 
-	my $module = $vals->{'module'};
+ result:
+    1 - success
+    0 - failure.
 
-	my $src = $conf->{'toaster_src_dir'}; $src ||= "/usr/local/src";
-	$utility->chdir_source_dir($src);
 
-	#$utility->syscmd("rm -rf $module-*");   # nuke any old versions
+=item module_load
 
-	my $site = $vals->{'site'};
-	$site ||= $conf->{'toaster_dl_site'};
-	$site ||= "http://www.tnpi.biz";
-
-	my $url = $vals->{'url'};
-	$url ||= $conf->{'toaster_dl_url'}; 
-	$url ||= "/internet/mail/toaster";
-
-	my $archive = $vals->{'archive'};
-	if ( $archive ) { 
-		if ( -e $archive ) {
-			print "using existing archive: $archive\n";
-		} else {
-			print "trying to fetch $site/$url/$archive\n";
-			$utility->get_file("$site/$url/$archive");
-			unless ( -e $archive ) { $utility->get_file("$site/$url/$archive.tar.gz"); };
-			unless ( -e $archive ) { $utility->get_file("$site/$url/$module.tar.gz");  };
-		};
-	} else {
-		print "trying to fetch $site/$url/$module.tar.gz\n";
-		$utility->get_file("$site/$url/$module.tar.gz");
-		unless ( -e "$module.tar.gz" ) {
-			print "FAILED: I don't know how to fetch $module\n";
-			return 0;
-		};
-	}
-
-	print "checking for previous build sources.\n";
-	if ( -d $module ) {
-		unless ( $utility->source_warning($module, 1, $src) )
-		{
-			carp "\nmodule_install: OK then, skipping install.\n";
-			return 0;
-		}
-		else {
-			$utility->syscmd("rm -rf $module");
-		};
-	};
-
-	if ( -e $archive ) {
-		print "decompressing $archive\n";
-		$utility->archive_expand($archive);
-	} else {
-		if ( -e "$module.tar.gz" ) {
-			$utility->archive_expand("$module.tar.gz");
-		} else {
-			print "FAILED: couldn't find $module sources.\n";
-		}
-	}
-
-	my $found;
-	print "looking for $module in $src...";
-	foreach my $file ( $utility->get_dir_files($src) )
-	{
-		if ( $file =~ /$module-/ || $file =~ /$module/ ) 
-		{
-			next unless -d $file;
-
-			print "found: $file\n";
-			$found++;
-			chdir($file);
-
-			my $targets = $vals->{'targets'};
-			unless ( @$targets[0] )
-			{
-				print "module_install: using default targets.\n";
-				@$targets = ( "perl Makefile.PL", "make", "make install")
-			};
-
-			print "installing with targets " . join(", ", @$targets) . "\n";
-			foreach ( @$targets ) {
-				return 0 if $utility->syscmd($_);
-			};
-
-			chdir("..");
-			$utility->syscmd("rm -rf $file");
-			last;
-		};
-	};
-
-	$found ? return 1 : return 0;
-};
-
-=head2 module_load
-
-    $perl->module_load( $hashref );
+    $perl->module_load( module=>'Net::DNS' );
 
 Loads a required Perl module. If the load fails, we attempt to install the required module (rather than failing gracelessly).
 
-Input is a  hashref which uses the following values:
 
+ arguments required:
     module      - the name of the module: (ie. LWP::UserAgent)
-    ports_name  - is the name of the FreeBSD port
-    ports_group - is is the ports group ( "ls /usr/ports" to see groups)
+    
+ arguments optional:
+    port_name  - is the name of the FreeBSD port
+    port_group - is is the ports group ( "ls /usr/ports" to see groups)
     warn        - if set, we warn instead of dying upon failure
     timer       - how long (in seconds) to wait for user input (default 60)
     site        - site to download sources from
@@ -268,81 +425,10 @@ Input is a  hashref which uses the following values:
 
 returns 1 for success, 0 for failure.
 
-=cut
 
-sub module_load($)
-{
-	my ($self, $vals) = @_;    # was: my ($mod, $name, $dir, $warn) = @_;
+=item perl_install
 
-	unless ( $vals && $vals->{'module'} ) {
-		croak "Sorry, you called module_load incorrectly!\n";
-	};
-
-	my $mod   = $vals->{'module'};
-	my $name  = $vals->{'ports_name'};
-	my $dir   = $vals->{'ports_group'};
-	my $warn  = $vals->{'warn'};
-	my $timer = $vals->{'timer'}; $timer ||= 60;
-
-	if (eval "require $mod") 
-	{
-		$mod->import();
-		return 1;
-	};
-
-	# we probably can't install anything unless we're root
-	return 0 unless ( $< eq 0 );
-
-	carp "\ncouldn't import $mod: $@\n";   # show error
-	my $try;
-
-	eval {
-		local $SIG{ALRM} = sub { die "alarm\n" };
-		alarm $timer;
-		$try = $utility->yes_or_no("\n\nWould you like me to try installing $mod: ");
-		alarm 0;
-	};
-
-	if ($@) {
-		($@ eq "alarm\n") ? print "timed out!\n" : carp;  # propagate unexpected errors
-	};
-
-	unless ($try) {
-		if ($warn) { carp "\n$mod is required, you have been warned.\n"; return 0; }
-		else       { croak "\nI'm sorry, $mod is required to continue.\n" };
-	};
-
-	if ( $dir && $os eq "freebsd" && -e "/usr/ports/$dir/$name" ) 
-	{
-		require Mail::Toaster::FreeBSD; my $freebsd = Mail::Toaster::FreeBSD->new();
-		$freebsd->port_install($name, $dir);
-	}
-	else {
-		use CPAN;
-		install "$mod";
-	};
-
-	print "testing install...";
-	if (eval "require $mod") { $mod->import(); print "success.\n"; return 1; };
-	print "FAILED.\n";
-
-	# finally, try from sources if possible
-	if ( $vals->{'site'} ) {
-		print "trying to install from sources\n";
-		$self->module_install($vals);
-
-		print "testing install...";
-		if (eval "require $mod") { $mod->import(); print "success.\n"; return 1; };
-		print "FAILED.\n";
-	};
-
-	return 0;
-};
-
-
-=head2 perl_install
-
-    $perl->perl_install( {version=>"perl-5.8.5"} );
+    $perl->perl_install( version=>"perl-5.8.5" );
 
 currently only works on FreeBSD and Darwin (Mac OS X)
 
@@ -351,131 +437,20 @@ input is a hashref with the following values:
     version - perl version to install
     options - compile flags to set (comma separated list)
 
-On FreeBSD, version is the directory name such as "perl5.8" derived from /usr/ports/lang/perl5.8. Ex: $perl->perl_install( {version=>"perl5.8"} );
+On FreeBSD, version is the directory name such as "perl5.8" derived from /usr/ports/lang/perl5.8. Ex: $perl->perl_install( version=>"perl5.8" );
 
 On Darwin, it's the directory name of the port in Darwin Ports. Ex: $perl->perl_install( {version=>"perl-5.8"} ) because perl is installed from /usr/ports/dports/lang/perl5.8. Otherwise, it's the exact version to download and install, ex: "perl-5.8.5".
 
 Example with option:
 
-$perl->perl_install( {version=>"perl-5.8.5", options=>"ENABLE_SUIDPERL"} );
-
-=cut
+$perl->perl_install( version=>"perl-5.8.5", options=>"ENABLE_SUIDPERL" );
 
 
-sub perl_install
-{
-	my ($self, $vals) = @_;
-
-	my $version = $vals->{'version'};
-	my $options = $vals->{'options'}; $options ||= "ENABLE_SUIDPERL";
-
-	if ( $os eq "freebsd" ) 
-	{
-		{eval require Mail::Toaster::FreeBSD}; my $freebsd = Mail::Toaster::FreeBSD->new();
-
-		my $port        = $freebsd->is_port_installed("perl");
-		my $portupgrade = $utility->find_the_bin("portupgrade");
-
-		if ($port) {
-			# perl is installed from ports, upgrade is necessary
-			if ( -x $portupgrade ) 
-			{
-				$utility->syscmd("$portupgrade $port");
-				print "\n\nPerl has been upgraded. Now we must upgrade all the perl modules as well. This is going to take a while!\n\n";
-				sleep 5;
-				$utility->syscmd("$portupgrade -f `pkg_info | grep p5- | cut -d\" \" -f1`");
-				$utility->syscmd("$portupgrade -f `pkg_info | grep rrdtool- | cut -d\" \" -f1`");
-			};
-		} else {
-			# install perl from ports
-			$freebsd->port_install ($version, "lang", "", "perl-5", $options);
-			$utility->syscmd ("/usr/local/bin/use.perl port");
-		};
-	}
-	elsif ( $os eq "darwin" )
-	{
-		if ( -d "/usr/ports/dports" )
-		{
-			$self->module_load( {module=>"Mail::Toaster::Darwin"} ); my $darwin = Mail::Toaster::Darwin->new();
-			$darwin->port_install("perl5.8");
-			$darwin->port_install("p5-compress-zlib");
-			return 1;
-		}
-
-		# as directed at http://developer.apple.com/internet/macosx/
-		
-		unless ( -d "/usr/local/src") { mkdir("/usr/local/src", 0755) };
-		chdir("/usr/local/src");
-
-		$version ||= "perl-5.8.4";
-
-		if ( $] < 5.008001 )
-		{
-			unless ( -e "$version.tar.gz" ) {
-				$utility->get_file("ftp://ftp.perl.org/pub/CPAN/src/$version.tar.gz");
-			};
-
-			if ( -d $version )
-			{
-				my $r = $utility->source_warning($version, 1);
-			};
-			my $tar = $utility->find_the_bin("tar");
-			$utility->syscmd("$tar -xzf $version.tar.gz");
-
-			chdir($version);
-			my $replace = $utility->yes_or_no("\n\n    NOTICE!   \n
-Apple installs Perl in /usr/bin. I can install it there as well, overwriting Darwin's
-supplied Perl (5.6.0) or it can be installed in /usr/local/bin (The BSD Way). Some
-would feel that's safer as it leaves Darwin's distributed version of Perl in tact. I
-would suggest that's apt to cause you grief later.\n
-
-Shall I overwrite the default Perl?");
-
-			if ( $replace ) { $utility->syscmd("./Configure -de -Dprefix=/usr"); } 
-			else            { $utility->syscmd("./Configure -de");               };
-	
-			$utility->syscmd("make");
-			$utility->syscmd("make test");
-
-			my $install = $utility->yes_or_no("\n\n
-OK, I just finished running \"make test\" and the results are show above. You should see
-a success rate somewhere along the lines of 99.7% okay with only a couple failures. If that's
-the case, just feed me a y and I'll install perl for you. Select n to cancel.\n\n");
-
-			return unless $install;
-
-			my $sudo = "";
-			if ( $< ne "0" ) { $sudo = "/usr/bin/sudo -p 'Password for %u@%h:'"; };
-	
-			if ($replace) 
-			{
-				# while this code isn't critical, it will fix the problem
-				# posted here: http://dev.perl.org/perl5/news/2002/07/18/580ann/perldelta.html#mac%20os%20x%20dyld%20undefined%20symbols
-				use File::Copy;
-				my $file = "/Library/Perl/darwin/CORE/libperl.dylib";
-				if ( -e $file ) {
-					move($file, "$file.old") or carp "failed to remove $file\n";
-				};
-				$file = "/System/Library/Perl/darwin/CORE/libperl.dylib";
-				if ( -e $file ) {
-					move($file, "$file.old") or carp "failed to remove $file\n";
-				};
-				$utility->syscmd("$sudo find /Library/Perl -name '*.bundle' -exec rm {} \;");
-				$utility->syscmd("$sudo find /System/Library/Perl -name '*.bundle' -exec rm {} \;");
-			};
-			$utility->syscmd("$sudo make install");
-		};
-	};
-};
-
-
-1;
-__END__
-
+=back
 
 =head1 AUTHOR
 
-Matt Simerson <matt@tnpi.biz>
+Matt Simerson (matt@tnpi.net)
 
 =head1 BUGS
 
@@ -485,9 +460,18 @@ None known. Report any to author.
 
 =head1 SEE ALSO
 
+The following are all man/perldoc pages: 
+
+ Apache::Logmonster 
+ Apache::Logmonster::Conf
+ logmonster.conf
+ logmonster.pl
+
+ http://www.tnpi.net/internet/www/logmonster/
+
 =head1 COPYRIGHT
 
-Copyright (c) 2003-2004, The Network People, Inc. All Rights Reserved.
+Copyright (c) 2003-2006, The Network People, Inc. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 

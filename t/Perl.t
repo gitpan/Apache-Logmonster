@@ -1,41 +1,36 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl test.pl'
-
+#!/usr/bin/perl
 #
-# $Id: Perl.t,v 1.2 2005/05/02 21:05:59 matt Exp $
+# $Id: Perl.t 502 2006-10-02 22:42:20Z matt $
 #
+use strict;
+#use warnings;
+use Cwd;
+use English qw( -no_match_vars );
+use Test::More 'no_plan';
 
-######################### We start with some black magic to print on failure.
-
-# Change 1..1 below to 1..last_test_to_print .
-# (It may become useful if the test is moved to ./t subdirectory.)
-
-BEGIN { $| = 1; print "1..4\n"; }
-END {print "not ok 1\n" unless $loaded;}
 use lib "lib";
-use Apache::Logmonster::Perl;
-$loaded = 1;
-print "ok 1 - Apache::Logmonster::Perl\n";
 
-######################### End of black magic.
+BEGIN { use_ok( 'Apache::Logmonster::Perl' ); }
+require_ok( 'Apache::Logmonster::Perl' );
 
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
+# let the testing begin
 
-
-my $perl = Apache::Logmonster::Perl->new();
-$perl ? print "ok 2 - perl object\n" : print "not ok 2\n";
+# basic OO mechanism
+my $perl = Apache::Logmonster::Perl->new;                       # create an object
+ok ( defined $perl, 'get Apache::Logmonster::Perl object' );    # check it
+ok ( $perl->isa('Apache::Logmonster::Perl'), 'check object class' ); # is it the right class
 
 
-$r = $perl->check;
-$r ? print "ok 3 - version check\n" : print "not ok 3 (version check)\n";
+ok( $perl->check(debug=>0), 'version check');
 
+ok( $perl->module_load( 
+		module     => "CGI",
+		port_name  => "p5-CGI",
+		port_group => "www",
+		timer      => 10,
+        fatal      => 0,
+	), 'module_load');
 
-$r = $perl->module_load( {
-		module      => "CGI",
-		ports_name  => "p5-CGI",
-		ports_group => "www",
-		timer       => 10,
-	} );
-$r ? print "ok 4 - module load\n" : print "not ok 4 (module_load)\n";
+ok( $perl->check(debug=>0), 'version check');
+
+#ok( $perl->perl_install(version=>'perl-5.8', debug=>1), 'install');

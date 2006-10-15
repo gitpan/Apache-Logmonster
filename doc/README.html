@@ -1,0 +1,264 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Apache::Logmonster - log utility for merging, sorting, and processing web logs</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:matt@cadillac.net" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+<!--
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#version">VERSION</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#usage">USAGE</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#motivation">MOTIVATION</a></li>
+		<li><a href="#features">FEATURES</a></li>
+	</ul>
+
+	<li><a href="#installation">INSTALLATION</a></li>
+	<li><a href="#diagnostics">DIAGNOSTICS</a></li>
+	<li><a href="#dependencies">DEPENDENCIES</a></li>
+	<li><a href="#bugs_and_limitations">BUGS AND LIMITATIONS</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#acknowledgements">ACKNOWLEDGEMENTS</a></li>
+	<li><a href="#todo">TODO</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#licence_and_copyright">LICENCE AND COPYRIGHT</a></li>
+</ul>
+-->
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Apache::Logmonster - log utility for merging, sorting, and processing web logs</p>
+<p>
+</p>
+<hr />
+<h1><a name="version">VERSION</a></h1>
+<pre>
+
+This documentation refers to Apache::Logmonster version 3.00</pre>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>logmonster.pl -i &lt;interval&gt; [-v] [-r] [-n] [-b N]</p>
+<pre>
+   Interval is one of:</pre>
+<pre>
+       hour    (last hour)
+       day     (yesterday)
+       month   (last month)</pre>
+<pre>
+   Optional:</pre>
+<pre>
+      -v     verbose     - lots of status messages 
+      -n     dry run     - do everything except feed the logs into the processor
+      -r     report      - last periods hit counts
+      -b N   back N days - use with -i day to process logs older than one day</pre>
+<p>
+</p>
+<hr />
+<h1><a name="usage">USAGE</a></h1>
+<p>To see what it will do without actually doing anything</p>
+<pre>
+   /usr/local/sbin/logmonster -i day -v -n</pre>
+<p>From cron:</p>
+<pre>
+   5 1 * * * /usr/local/sbin/logmonster -i day</pre>
+<p>From cron with a report of activity:</p>
+<pre>
+   5 1 * * * /usr/local/sbin/logmonster -i day -v</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>Logmonster is a tool to collect log files from one or many Apache web servers, split them based on the virtual host they were served for, sort the logs into cronological order, and finally pipe the sorted logs to the log file analyzer of choice (webalizer, http-analyze, AWstats, etc).</p>
+<p>
+</p>
+<h2><a name="motivation">MOTIVATION</a></h2>
+<p>Log collection: I have a number of web sites that are mirrored on two or three web servers. The statistics I care about are agreggate. I want to know how much traffic a web site is getting across all the servers. To accomplish that, the logs must be collected from each server.</p>
+<p>Sorting: Since most log processors require the log file entries to be in chronological order, simply concatenating them, or feeding them one after another does not work. Logmonster takes care of this by sorting all the log entries for each vhost into chronological order.</p>
+<p>Processor Agnostic: If I want to switch from one log processor to another, it should be simple and painless. Logmonster takes care of all the dirty work to make the possible. Each domain can even have its own processor.</p>
+<p>
+</p>
+<h2><a name="features">FEATURES</a></h2>
+<ul>
+<li><strong><a name="item_log_retrieval_from_one_or_mnay_hosts">Log Retrieval from one or mnay hosts</a></strong>
+
+<li><strong><a name="item_ouputs_to_webalizer_2c_http_2danalyze_2c_and_awsta">Ouputs to webalizer, http-analyze, and AWstats.</a></strong>
+
+<li><strong><a name="item_automatic_vhost_configuration">Automatic vhost configuration</a></strong>
+
+<p>Logmonster reads your Apache config files to learn about your virtual hosts and their file system location. Logmonster also generates config files as required (ie, awstats.example.com.conf).</p>
+</li>
+<li><strong><a name="item_settings_configuration_for_each_virtualhost">Settings configuration for each virtualhost</a></strong>
+
+<p>Outputs stats into each virtual domains stats dir, if that directory exists. This is an easy way to enable or disable stats for a virtual host. If ``stats'' exists, it will be updated. Otherwise it will not. Can also creates missing stats directories if desired (see statsdir_policy in logmonster.conf).</p>
+</li>
+<li><strong><a name="item_efficient">Efficient</a></strong>
+
+<p>uses Compress::Zlib to read directly from .gz files to minimizes network and disk usage. Skips processing logs for vhosts with no $statsdir. Skips sorting if you only have logs from one host.</p>
+</li>
+<li><strong><a name="item_flexible_update_intervals">Flexible update intervals</a></strong>
+
+<p>you can run it monthly, daily, or hourly</p>
+</li>
+<li><strong><a name="item_reporting">Reporting</a></strong>
+
+<p>saves an activity report and sends an email friendly report.</p>
+</li>
+<li><strong><a name="item_reliable">Reliable</a></strong>
+
+<p>lots of error checking so if something goes wrong, it gives a useful error message.</p>
+</li>
+<li><strong><a name="item_apache_savvy">Apache savvy</a></strong>
+
+<p>Understands and correctly deals with server aliases</p>
+</li>
+</ul>
+<p>
+</p>
+<hr />
+<h1><a name="installation">INSTALLATION</a></h1>
+<dl>
+<dt><strong><a name="item_install">Step 1 - Download and install (it's FREE!)</a></strong>
+
+<dd>
+<p><a href="http://www.tnpi.net/store/product_info.php?cPath=2&products_id=40">http://www.tnpi.net/store/product_info.php?cPath=2&products_id=40</a></p>
+</dd>
+<dd>
+<p>Install like nearly every perl module:</p>
+</dd>
+<dd>
+<pre>
+   perl Makefile.PL
+   make test
+   make install</pre>
+</dd>
+<dd>
+<p>To install the config file use ``make conf'' or ``make newconf''. newconf will overwrite any existing config file, so use it only for new installs.</p>
+</dd>
+</li>
+<dt><strong><a name="item_step_2__2d_edit_logmonster_2econf">Step 2 - Edit logmonster.conf</a></strong>
+
+<dd>
+<pre>
+ vi /usr/local/etc/logmonster.conf</pre>
+</dd>
+<dt><strong><a name="item_step_3__2d_edit_httpd_2econf">Step 3 - Edit httpd.conf</a></strong>
+
+<dd>
+<p>Adjust the CustomLog and ErrorLog definitions. We make two changes, appending %v (the vhost name) to the CustomLog and adding cronolog to automatically rotate the log files.</p>
+</dd>
+<dd>
+<pre>
+  LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot; %v&quot; combined
+  CustomLog &quot;| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/access.log&quot; combined
+  ErrorLog &quot;| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/error.log&quot;</pre>
+</dd>
+</li>
+<dt><strong><a name="item_step_4__2d_test_manually_2c_then_add_to_cron_2e">Step 4 - Test manually, then add to cron.</a></strong>
+
+<dd>
+<pre>
+  crontab -u root -e
+  5 1 * * * /usr/local/sbin/logmonster -i day</pre>
+</dd>
+<dt><strong><a name="item_step_5__2d_read_the_faq">Step 5 - Read the FAQ</a></strong>
+
+<dd>
+<p><a href="http://www.tnpi.net/internet/www/logmonster/faq.shtml">http://www.tnpi.net/internet/www/logmonster/faq.shtml</a></p>
+</dd>
+</li>
+<dt><strong><a name="item_step_6__2d_enjoy">Step  6 - Enjoy</a></strong>
+
+<dd>
+<p>Allow Logmonster to make your life easier by handling your log processing. Enjoy the daily summary emails, and then express your gratitude by making a small donation to support future development efforts.</p>
+</dd>
+</li>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="diagnostics">DIAGNOSTICS</a></h1>
+<p>Run in verbose mode (-v) to see addition status and error messages. If you want more verbosity, you can increase the verbosity by appending another -v (-v -v). If that is not enough, run with (-v -v -v) for even more verbosity. If that is not enough is, the source with you be. ``Fear is the path to the dark side. Fear leads to anger. Anger leads to hate. Hate leads to suffering.'' Fear not, for the source is strong with you.</p>
+<p>Also helpful when troubleshooting is the ability to skip cleanup (so logfiles do not have to be fetched anew) with the --noclean command line option.</p>
+<p>
+</p>
+<hr />
+<h1><a name="dependencies">DEPENDENCIES</a></h1>
+<p>Not perl builtins</p>
+<pre>
+  Compress::Zlib
+  Date::Parse (TimeDate)</pre>
+<p>Builtins</p>
+<pre>
+  Carp
+  Cwd
+  FileHandle
+  File::Basename
+  File::Copy</pre>
+<p>
+</p>
+<hr />
+<h1><a name="bugs_and_limitations">BUGS AND LIMITATIONS</a></h1>
+<p>None known. Report problems to author. Patches are welcome.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<pre>
+
+Matt Simerson  (matt@tnpi.net)</pre>
+<p>
+</p>
+<hr />
+<h1><a name="acknowledgements">ACKNOWLEDGEMENTS</a></h1>
+<pre>
+ Gernot Hueber - sumitted the daily userlogs feature
+ Lewis Bergman - funded authoring of several features
+ Raymond Dijkxhoorn - suggested not sorting the files for one log host
+ Earl Ruby  - a better regexp for apache log date parsing</pre>
+<p>
+</p>
+<hr />
+<h1><a name="todo">TODO</a></h1>
+<p>Add support for analog.</p>
+<p>Add support for individual webalizer.conf file for each domain (this will likely not happen until someone submits a diff or pays me to do it as I don't use webalizer any longer).</p>
+<p>Delete log files older than X days/month - super low priority, it's easy and low maintenance to manually delete a few months log files when I'm sure I don't need them any longer.</p>
+<p>Do something with error logs (other than just compress)</p>
+<p>If files to process are larger than 10MB, find a nicer way to sort them rather than reading them all into a hash. Now I create two hashes, one with data and one with dates. I sort the date hash, and using those sorted hash keys, output the data hash to a sorted file. This is necessary as wusage and http-analyze require logs to be fed in chronological order. Look at awstats logresolvemerge as a possibility.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p><a href="http://www.tnpi.biz/internet/www/logmonster">http://www.tnpi.biz/internet/www/logmonster</a></p>
+<p>
+</p>
+<hr />
+<h1><a name="licence_and_copyright">LICENCE AND COPYRIGHT</a></h1>
+<p>Copyright (c) 2003-2006, The Network People, Inc. (<a href="mailto:info@tnpi.net">info@tnpi.net</a>) All rights reserved.</p>
+<p>Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:</p>
+<p>Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.</p>
+<p>Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.</p>
+<p>Neither the name of the The Network People, Inc. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.</p>
+<p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DIS CLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+</p>
+
+</body>
+
+</html>

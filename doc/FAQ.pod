@@ -1,0 +1,206 @@
+
+=begin html
+
+<p>Apache::Logmonster - Log Processing Utility<br>
+Author: Matt Simerson.</p>
+
+ <p>[ 
+   <a href="/internet/www/logmonster.shtml">Install</a> | 
+   <a href="/internet/www/logmonster/configure.shtml">Configure</a> | 
+   FAQ | 
+   <a href="/internet/www/logmonster/changelog.shtml">ChangeLog</a> | 
+   <a href="/internet/www/logmonster/sample.shtml">Sample</a> ]
+ </p>
+
+ <hr>
+
+=end html
+
+=head1 Frequently Asked Questions
+
+=head2 Why did you write Logmonster?
+
+Typical Scenario: You have a web server that serves your domain. You write a simple script to restart apache each night and pipe the logs off to your analyzer. It works just fine.  
+
+ISP/Hosting Scenario: Each server hosts many domains. You may also have load balanced servers (multiple machines) serving each domain. A tool like this is necessary to:
+
+=over
+
+=item 1. collect all the log files from each server
+
+=item 2. split the logs based on the virtual host(s)
+
+=item 3. sort them into cronological order
+
+=item 4. feed logs into analyzer
+
+=item 5. do something with the raw logs (compress, drop into vhost dir, etc)
+
+=back
+
+=head2 Why should I use cronolog?
+
+Read the Apache docs (L<http://httpd.apache.org/docs/2.0/logs.html>) and all the caveats required to rotate logs, including restarting the server at the right time. Factor that into using several servers in different time zones and you will find it much more reliable to use cronolog. I have used cronolog for years and never had an issue.
+
+=head2 Why not use one file per vhost so you don't have to split them?
+
+I tried that. One problem is that you end up with lots of open file descriptors (one per vhost). That only scales so far before you decide it is not a good idea. You still must collect the files from multiple servers and sort them before feeding them into your log processor. You might as well just start by having them all in one place.
+
+=head2 What is the recommended way to implement logmonster?
+
+=over
+
+=item * Adjust CustomLog and add the %v to it as show above. 
+
+=item * If you aren't already using cronolog, start. Wait a day. 
+
+=item * Test by running "logmonster -i day -n" 
+
+=back
+
+It will tell you what it is doing and everything should look reasonable. Correct anything you do not like (creating $statsdir for domains that should have it, etc) and then create a cron entry running "logmonster.pl -d" anytime after midnight. Read the output from logmonster in your mailbox for the next week. When you're confident everything is great, adjust crontab and add a "-q" to it so it stops emailing you (unless there's errors).
+
+=head2 How do I enable log processing for a virtual domain?
+
+Create the directory ("stats" by default) within the vhost's DocumentRoot. 
+
+For example, the docroot for example.com is /home/example.com/html. To enable virtual host processing, create the directory /home/example.com/html/stats. Their statistics will be processed.
+
+
+=head2 How do I process my logs hourly?
+
+=over
+
+=item * Set cronolog to "%Y/%m/%d/%H"
+
+=item * run logmonster with -i hour
+
+=item * adjust the cron entry to run every hour.
+
+=back
+
+If you use webalizer, get acquainted with webalizer -p and its limits.
+
+
+=head2 Can you explain how to use the -b stuff?
+
+Imagine you shut your server down at 0:55 last night to do some system maintenance. You brought it back up at at 1:05 (10 minutes later) but your cron job that runs logmonster at 1:00am did not run. The solution is to run logmonster manually.
+
+
+Now, suppose you made an err that caused logmonster to not run for the last week. You return from vacation and notice the errors in your mailbox, because that B<is> where you configured cron stuff to go, right? Now you set about to fix the problem. 
+
+
+The way to process old logs with logmonster is to use the -b option. In our example, we would run "logmonster -i day -b7". Logmonster will confirm the date with you and then dutifully process the logs from 7 days ago. Then run again with "-d -b6", etc until you are current.
+
+
+=head2 What assumptions do logmonster.pl make?
+
+=over
+
+=item 1. You use cronolog
+
+=item 2. You have enough memory to fit your largest zones log file into RAM
+
+=item 3. You have the following Perl modules installed
+
+=over
+
+Most systems have all but Compress::Zlib installed
+
+=item * FileHandle
+
+=item * POSIX
+
+=item * Date::Format
+
+=item * File::Copy
+
+=item * File::Path
+
+=item * Date::Parse
+
+=item * Compress::Zlib
+
+=back
+
+=item 4. Your logs are set up properly. See "Apache Logs"
+
+=item 5. The time on your web servers is syncronized (think NTP)
+
+=item 6. You use webalizer, http-analyze, or AWstats for log processing
+
+=back
+
+=head2 What should I set vhost to?
+
+vhost should be either a file with all your directives listed (ie, httpd.conf) or a directory (my favorite way) that contains files, each containing the VirtualHost and related directives for that Apache vhost. This is from the configuration file:
+
+  ##
+  # vhost -  This is where Logmonster learns about your Apache vhosts. If
+  #          you list them in your httpd.conf, then this should be set to
+  #          the full path of your httpd.conf file. 
+  #
+  #              vhost = /usr/local/etc/apache/httpd.conf
+  #
+  #          If you use a include directory for your vhosts, then this
+  #          should be the full path to that directory.
+  #
+  #              vhost = /usr/local/etc/apache/vhosts
+  #
+  #vhost     = /etc/httpd/vhosts               # darwin
+  #vhost     = /var/www/vhosts                 # linux
+  #vhost     = /usr/local/etc/apache2/Includes  # freebsd
+  #
+  vhost     = /usr/local/etc/apache/Includes
+
+=head2 Can I use this with web servers other than Apache?
+
+Absolutely. Set up a configuration file with your vhost information in it and point logmonster at it. The format for each vhost is as follows:
+
+    <VirtualHost>
+      ServerName www.tnpi.net
+      ServerAlias www.thenetworkpeople.net *.tnpi.net
+      DocumentRoot /home/tnpi.net/html
+    </VirtualHost>
+
+Create as many vhost directives as you need and logmonster will parse them all. When you make changes to your web server, update this file as well.
+
+All the other rules apply equally. You will want to use Apache's ELF (Extended Log Format) with the virtual hostname appended to the logs and pipe the logs to cronolog for reasons mentioned elsewhere.
+
+=head2 Cronolog and selinux are not playing nicely
+
+I just finished installing cronolog on a selinux system (CentOS) with the sestatus set to enforcing. There were problems getting the permissions correct so that cronolog would be allowed to create files and dirs. I added this to solve the problem.
+
+CentOS and RHEL4 and other RH clones use the file: /etc/selinux/targeted/contexts/files/file_contexts to store context info for files and dirs. In the above file add the location that you want logs to be written in if different than the standard /var/log/httpd like so:
+
+C<< /var/log/apache(/.*)?   system_u:object_r:httpd_log_t >>
+
+This line would allow cronolog to create and write files in the new location. Hope this saves someone else the trouble. Another way to do this would be to use the command line chcon facility like so:
+
+C<< chcon -R -h -t httpd_log_t /var/log/apache >>
+
+I have not rebooted my server or tested to see that on a system reset the chcon settings survive but I doubt it.
+
+I hope this info saves someone else the trouble of looking it up and diagnosing a problem.
+-- 
+Lewis Bergman
+
+
+=head2 How do my logs need to be set up?
+
+The default version of Apache's ELF format is quite good. However, on a system with many virtual hosts, determing which vhost a particular entry is for can be quite difficult. I wrote a parser that was about 98% effective. However, there is a better way.
+
+
+Apache supports the addition of a %v option in the LogFormat declaration. Using it appends the virtualhost that the hit was served for. This is 100% effective and makes it quite easy to detemine which vhost a log entry was served for. So, we recommend using a slightly modified version of Apache's Extended Log Format.
+
+
+  LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v" combined
+  CustomLog "| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/access.log" combined
+  ErrorLog "| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/error.log"
+
+The LogFormat line is identical to its heir in the httpd.conf-default file except for the %v at the end. That little %v tells Apache to write the canonical servername (vhost) into the logfile.
+
+The CustomLog line is pretty easy too. We pipe our logs to cronolog and it is set to store each days logs into an appropriately named directory. In this example, todays logs are stored on /var/log/apache/2006/10/01/access.log. That makes it very easy to grab an interval worth of logs to process.
+
+=cut
+

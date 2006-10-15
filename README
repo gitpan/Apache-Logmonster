@@ -1,41 +1,103 @@
 NAME
-    Apache::Logmonster
+    Apache::Logmonster - log utility for merging, sorting, and processing
+    web logs
+
+VERSION
+    This documentation refers to Apache::Logmonster version 3.00
 
 SYNOPSIS
-    Processor for Apache logs
+    logmonster.pl -i <interval> [-v] [-r] [-n] [-b N]
+
+       Interval is one of:
+
+           hour    (last hour)
+           day     (yesterday)
+           month   (last month)
+
+       Optional:
+
+          -v     verbose     - lots of status messages 
+          -n     dry run     - do everything except feed the logs into the processor
+          -r     report      - last periods hit counts
+          -b N   back N days - use with -i day to process logs older than one day
+
+USAGE
+    To see what it will do without actually doing anything
+
+       /usr/local/sbin/logmonster -i day -v -n
+
+    From cron:
+
+       5 1 * * * /usr/local/sbin/logmonster -i day
+
+    From cron with a report of activity:
+
+       5 1 * * * /usr/local/sbin/logmonster -i day -v
 
 DESCRIPTION
-    A tool to collect log files from multiple Apache web servers, split them
-    based on the virtual host, sort the logs into cronological order, and
-    then pipe them into a log file analyzer of your choice (webalizer,
-    http-analyze, AWstats, etc).
+    Logmonster is a tool to collect log files from one or many Apache web
+    servers, split them based on the virtual host they were served for, sort
+    the logs into cronological order, and finally pipe the sorted logs to
+    the log file analyzer of choice (webalizer, http-analyze, AWstats, etc).
+
+  MOTIVATION
+    Log collection: I have a number of web sites that are mirrored on two or
+    three web servers. The statistics I care about are agreggate. I want to
+    know how much traffic a web site is getting across all the servers. To
+    accomplish that, the logs must be collected from each server.
+
+    Sorting: Since most log processors require the log file entries to be in
+    chronological order, simply concatenating them, or feeding them one
+    after another does not work. Logmonster takes care of this by sorting
+    all the log entries for each vhost into chronological order.
+
+    Processor Agnostic: If I want to switch from one log processor to
+    another, it should be simple and painless. Logmonster takes care of all
+    the dirty work to make the possible. Each domain can even have its own
+    processor.
 
   FEATURES
-    Log Retrieval from one or mnay hosts
-    Ouputs to webalizer, http-analyze, and AWstats.
-    Automatic configuration by reading Apache config files. Generates config
-    files as required (ie, awstats.example.com.conf).
-    Outputs stats into each virtual domains stats dir, if that directory
-    exists. (HINT: Easy way to enable or disable stats for a virtual host).
-    Can create missing stats directories if desired.
-    Efficient: uses Compress::Zlib to read directly from .gz files to
-    minimize disk use. Skips processing logs for vhosts with no $statsdir.
-    Doesn't sort if you only have logs from one host.
-    Flexible: you can run it monthly, daily, or hourly
-    Reporting: saves an activity report and sends an email friendly report.
-    Reliable: lots of error checking so if something goes wrong, it'll give
-    you a useful error message.
-    Understands and correctly deals with server aliases
+    * Log Retrieval from one or mnay hosts
+    * Ouputs to webalizer, http-analyze, and AWstats.
+    * Automatic vhost configuration
+        Logmonster reads your Apache config files to learn about your
+        virtual hosts and their file system location. Logmonster also
+        generates config files as required (ie, awstats.example.com.conf).
+
+    * Settings configuration for each virtualhost
+        Outputs stats into each virtual domains stats dir, if that directory
+        exists. This is an easy way to enable or disable stats for a virtual
+        host. If "stats" exists, it will be updated. Otherwise it will not.
+        Can also creates missing stats directories if desired (see
+        statsdir_policy in logmonster.conf).
+
+    * Efficient
+        uses Compress::Zlib to read directly from .gz files to minimizes
+        network and disk usage. Skips processing logs for vhosts with no
+        $statsdir. Skips sorting if you only have logs from one host.
+
+    * Flexible update intervals
+        you can run it monthly, daily, or hourly
+
+    * Reporting
+        saves an activity report and sends an email friendly report.
+
+    * Reliable
+        lots of error checking so if something goes wrong, it gives a useful
+        error message.
+
+    * Apache savvy
+        Understands and correctly deals with server aliases
 
 INSTALLATION
     Step 1 - Download and install (it's FREE!)
-        http://www.tnpi.biz/store/product_info.php?cPath=2&products_id=40
+        http://www.tnpi.net/store/product_info.php?cPath=2&products_id=40
 
-        Install like every other perl module:
+        Install like nearly every perl module:
 
-         perl Makefile.PL
-         make test
-         make install 
+           perl Makefile.PL
+           make test
+           make install 
 
         To install the config file use "make conf" or "make newconf".
         newconf will overwrite any existing config file, so use it only for
@@ -46,22 +108,19 @@ INSTALLATION
 
     Step 3 - Edit httpd.conf
         Adjust the CustomLog and ErrorLog definitions. We make two changes,
-        adding %v (the vhost name) to the CustomLog and adding cronolog to
-        automatically rotate the log files.
+        appending %v (the vhost name) to the CustomLog and adding cronolog
+        to automatically rotate the log files.
 
-        LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\"
-        \"%{User-Agent}i\" %v" combined
-        CustomLog "| /usr/local/sbin/cronolog
-        /var/log/apache/%Y/%m/%d/access.log" combined
-        ErrorLog "| /usr/local/sbin/cronolog
-        /var/log/apache/%Y/%m/%d/error.log"
+          LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v" combined
+          CustomLog "| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/access.log" combined
+          ErrorLog "| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/error.log"
 
     Step 4 - Test manually, then add to cron.
           crontab -u root -e
-          5 1 * * * /usr/local/sbin/logmonster -d
+          5 1 * * * /usr/local/sbin/logmonster -i day
 
     Step 5 - Read the FAQ
-        http://www.tnpi.biz/internet/www/logmonster/faq.shtml
+        <http://www.tnpi.net/internet/www/logmonster/faq.shtml>
 
     Step 6 - Enjoy
         Allow Logmonster to make your life easier by handling your log
@@ -69,73 +128,54 @@ INSTALLATION
         gratitude by making a small donation to support future development
         efforts.
 
+DIAGNOSTICS
+    Run in verbose mode (-v) to see addition status and error messages. If
+    you want more verbosity, you can increase the verbosity by appending
+    another -v (-v -v). If that is not enough, run with (-v -v -v) for even
+    more verbosity. If that is not enough is, the source with you be. "Fear
+    is the path to the dark side. Fear leads to anger. Anger leads to hate.
+    Hate leads to suffering." Fear not, for the source is strong with you.
+
+    Also helpful when troubleshooting is the ability to skip cleanup (so
+    logfiles do not have to be fetched anew) with the --noclean command line
+    option.
+
 DEPENDENCIES
+    Not perl builtins
+
       Compress::Zlib
       Date::Parse (TimeDate)
 
-report_hits
-    report_hits reads a days log file and reports the results back to
-    standard out. The logfile contains key/value pairs like so:
+    Builtins
 
-        matt.simerson:4054
-        www.tnpi.biz:15381
-        www.nictool.com:895
+      Carp
+      Cwd
+      FileHandle
+      File::Basename
+      File::Copy
 
-    This file is read by logmonster when called in -r (report) mode and is
-    expected to be called via an SNMP agent.
-
-report_open
-    In addition to emailing you a copy of the report, Logmonster leaves
-    behind a copy in the log directory.
-
-check_stats_dir
-    Each domain on your web server is expected to have a "stats" dir. I name
-    mine "stats" and locate in their DocumentRoot, owned by root so that the
-    user doesn't delete it. This sub first goes through the list of files in
-    (by default) /var/log/apache/tmp/doms, which is a file with the log
-    entries for each vhost. If the file name matches the vhost name, the
-    contents of that log correspond to that vhost.
-
-    If the file is zero bytes, it deletes it as there is nothing to do.
-
-    Otherwise, it gathers the vhost name from the file and checks the
-    %domains hash to see if a directory path exists for that vhost. If no
-    hash entry is found or the entry is not a directory, then we declare the
-    hits unmatched and discard them.
-
-    For log files with entries, we check inside the docroot for a stats
-    directory. If no stats directory exists, then we discard those entries
-    as well.
-
-feed_the_machine
-    feed_the_machine takes the sorted vhost logs and feeds them into the
-    stats processor that you chose.
-
-sort_vhost_logs
-    At this point, we'll have collected the Apache logs from each web server
-    and split them up based on which vhost they were served for. However,
-    our stats processors (most of them) require the logs to be sorted in
-    cronological date order. So, we open up each vhosts logs for the day,
-    read them into a hash, sort them based on their log entry date, and then
-    write them back out.
-
-split_logs_to_vhosts
-    After collecting the log files from each server in the cluster, we need
-    to split them up based upon the vhost they were intended for. This sub
-    does that.
+BUGS AND LIMITATIONS
+    None known. Report problems to author. Patches are welcome.
 
 AUTHOR
-    Matt Simerson <matt@tnpi.biz>
+    Matt Simerson (matt@tnpi.net)
 
-BUGS
-    None known. Report any to author.
+ACKNOWLEDGEMENTS
+     Gernot Hueber - sumitted the daily userlogs feature
+     Lewis Bergman - funded authoring of several features
+     Raymond Dijkxhoorn - suggested not sorting the files for one log host
+     Earl Ruby  - a better regexp for apache log date parsing
 
 TODO
-    Support for analog.
+    Add support for analog.
 
-    Support for individual webalizer.conf file for each domain
+    Add support for individual webalizer.conf file for each domain (this
+    will likely not happen until someone submits a diff or pays me to do it
+    as I don't use webalizer any longer).
 
-    Delete log files older than X days/month
+    Delete log files older than X days/month - super low priority, it's easy
+    and low maintenance to manually delete a few months log files when I'm
+    sure I don't need them any longer.
 
     Do something with error logs (other than just compress)
 
@@ -144,14 +184,14 @@ TODO
     with data and one with dates. I sort the date hash, and using those
     sorted hash keys, output the data hash to a sorted file. This is
     necessary as wusage and http-analyze require logs to be fed in
-    chronological order. Take a look at awstats logresolvemerge as a
-    possibility.
+    chronological order. Look at awstats logresolvemerge as a possibility.
 
 SEE ALSO
     http://www.tnpi.biz/internet/www/logmonster
 
-COPYRIGHT
-    Copyright (c) 2003-2004, The Network People, Inc. All rights reserved.
+LICENCE AND COPYRIGHT
+    Copyright (c) 2003-2006, The Network People, Inc. (info@tnpi.net) All
+    rights reserved.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are
