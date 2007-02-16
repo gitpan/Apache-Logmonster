@@ -2,6 +2,8 @@ use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
+use lib "lib";
+use lib "inc";
 
 sub MY::postamble 
 {
@@ -15,6 +17,7 @@ docs:
 	pod2html --noindex logmonster.pl   > doc/README.html
 	pod2html doc/FAQ.pod               > doc/FAQ.html
 	pod2html --noindex doc/Changes.pod > doc/Changes.html
+	rm pod2htm*
  
 web:
 	install -m 0644 logmonster.pl     $(LOGMONSTER)/logmonster.pl
@@ -22,7 +25,8 @@ web:
 	install -m 0644 doc/Changes.html  $(LOGMONSTER)/changes.html
 	install -m 0644 doc/FAQ.html      $(LOGMONSTER)/faq.html
 	install -m 0644 doc/README.html   $(LOGMONSTER)/README.html
-	mv Apache-Logmonster-$(VERSION).tar.gz $(LOGMONSTER)/Logmonster.tar.gz
+	cp Apache-Logmonster-$(VERSION).tar.gz $(LOGMONSTER)/Logmonster.tar.gz
+	mv Apache-Logmonster-$(VERSION).tar.gz $(LOGMONSTER)/Apache-Logmonster.tar.gz
 
 conf:
 	install -d /usr/local
@@ -38,15 +42,16 @@ newconf:
 
 };
 
-
 WriteMakefile(
 	'NAME'	        => 'Apache::Logmonster',
 	'VERSION_FROM'  => 'logmonster.pl',
 	'EXE_FILES'     => [ 'logmonster.pl' ],
 	'INSTALLSCRIPT' => '/usr/local/sbin',
 	'PREREQ_PM'     => {
-                            'Compress::Zlib' => 0, 
-                            'Date::Parse'    => 0 
+                            'Params::Validate' => .8,
+                            'Compress::Zlib'   => 2, 
+                            'Date::Parse'      => 2,
+                            'Regexp::Log'      => .04,
                         },
 	'AUTHOR'         => 'Matt Simerson (matt@tnpi.net)',
 	'ABSTRACT'       => 'Apache log utility for merging, sorting, and processing web logs',

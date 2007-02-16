@@ -1,10 +1,8 @@
-<?xml version="1.0" ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>Frequently Asked Questions</title>
-<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<link rev="made" href="mailto:matt@cadillac.net" />
+<link rev="made" href="mailto:root@b01.apple.com" />
 </head>
 
 <body style="background-color: white">
@@ -52,16 +50,16 @@ Author: Matt Simerson.</p> <p>[
 <p>Typical Scenario: You have a web server that serves your domain. You write a simple script to restart apache each night and pipe the logs off to your analyzer. It works just fine.</p>
 <p>ISP/Hosting Scenario: Each server hosts many domains. You may also have load balanced servers (multiple machines) serving each domain. A tool like this is necessary to:</p>
 <ol>
-<li><strong><a name="item_collect_all_the_log_files_from_each_server">collect all the log files from each server</a></strong>
-
-<li><strong><a name="item_host">split the logs based on the virtual <code>host(s)</code></a></strong>
-
-<li><strong><a name="item_sort_them_into_cronological_order">sort them into cronological order</a></strong>
-
-<li><strong><a name="item_feed_logs_into_analyzer">feed logs into analyzer</a></strong>
-
-<li><strong><a name="item_logs">do something with the raw logs (compress, drop into vhost dir, etc)</a></strong>
-
+<li><strong><a name="item_collect_all_the_log_files_from_each_server">collect all the log files from each server</a></strong><br />
+</li>
+<li><strong><a name="item_host">split the logs based on the virtual <code>host(s)</code></a></strong><br />
+</li>
+<li><strong><a name="item_sort_them_into_cronological_order">sort them into cronological order</a></strong><br />
+</li>
+<li><strong><a name="item_feed_logs_into_analyzer">feed logs into analyzer</a></strong><br />
+</li>
+<li><strong><a name="item_logs">do something with the raw logs (compress, drop into vhost dir, etc)</a></strong><br />
+</li>
 </ol>
 <p>
 </p>
@@ -75,12 +73,12 @@ Author: Matt Simerson.</p> <p>[
 </p>
 <h2><a name="what_is_the_recommended_way_to_implement_logmonster">What is the recommended way to implement logmonster?</a></h2>
 <ul>
-<li><strong><a name="item_adjust_customlog_and_add_the__25v_to_it_as_show_ab">Adjust CustomLog and add the %v to it as show above.</a></strong>
-
-<li><strong><a name="item_if_you_aren_27t_already_using_cronolog_2c_start_2e">If you aren't already using cronolog, start. Wait a day.</a></strong>
-
-<li><strong><a name="item_test_by_running__22logmonster__2di_day__2dn_22">Test by running ``logmonster -i day -n''</a></strong>
-
+<li><strong><a name="item_adjust_customlog_and_add_the__25v_to_it_as_show_ab">Adjust CustomLog and add the %v to it as show above.</a></strong><br />
+</li>
+<li><strong><a name="item_if_you_aren_27t_already_using_cronolog_2c_start_2e">If you aren't already using cronolog, start. Wait a day.</a></strong><br />
+</li>
+<li><strong><a name="item_test_by_running__22logmonster__2di_day__2dn_22">Test by running ``logmonster -i day -n''</a></strong><br />
+</li>
 </ul>
 <p>It will tell you what it is doing and everything should look reasonable. Correct anything you do not like (creating $statsdir for domains that should have it, etc) and then create a cron entry running ``logmonster.pl -d'' anytime after midnight. Read the output from logmonster in your mailbox for the next week. When you're confident everything is great, adjust crontab and add a ``-q'' to it so it stops emailing you (unless there's errors).</p>
 <p>
@@ -92,12 +90,12 @@ Author: Matt Simerson.</p> <p>[
 </p>
 <h2><a name="how_do_i_process_my_logs_hourly">How do I process my logs hourly?</a></h2>
 <ul>
-<li><strong><a name="item_set_cronolog_to__22_25y_2f_25m_2f_25d_2f_25h_22">Set cronolog to ``%Y/%m/%d/%H''</a></strong>
-
-<li><strong><a name="item_run_logmonster_with__2di_hour">run logmonster with -i hour</a></strong>
-
-<li><strong><a name="item_adjust_the_cron_entry_to_run_every_hour_2e">adjust the cron entry to run every hour.</a></strong>
-
+<li><strong><a name="item_set_cronolog_to__22_25y_2f_25m_2f_25d_2f_25h_22">Set cronolog to ``%Y/%m/%d/%H''</a></strong><br />
+</li>
+<li><strong><a name="item_run_logmonster_with__2di_hour">run logmonster with -i hour</a></strong><br />
+</li>
+<li><strong><a name="item_adjust_the_cron_entry_to_run_every_hour_2e">adjust the cron entry to run every hour.</a></strong><br />
+</li>
 </ul>
 <p>If you use webalizer, get acquainted with webalizer -p and its limits.</p>
 <p>
@@ -110,35 +108,35 @@ Author: Matt Simerson.</p> <p>[
 </p>
 <h2><a name="what_assumptions_do_logmonster_pl_make">What assumptions do logmonster.pl make?</a></h2>
 <ol>
-<li><strong><a name="item_you_use_cronolog">You use cronolog</a></strong>
-
-<li><strong><a name="item_you_have_enough_memory_to_fit_your_largest_zones_l">You have enough memory to fit your largest zones log file into RAM</a></strong>
-
-<li><strong><a name="item_you_have_the_following_perl_modules_installed">You have the following Perl modules installed</a></strong>
-
-<p>Most systems have all but Compress::Zlib installed</p>
+<li><strong><a name="item_you_use_cronolog">You use cronolog</a></strong><br />
+</li>
+<li><strong><a name="item_you_have_enough_memory_to_fit_your_largest_zones_l">You have enough memory to fit your largest zones log file into RAM</a></strong><br />
+</li>
+<li><strong><a name="item_you_have_the_following_perl_modules_installed">You have the following Perl modules installed</a></strong><br />
+</li>
+Most systems have all but Compress::Zlib installed
 <ul>
-<li><strong><a name="item_filehandle">FileHandle</a></strong>
-
-<li><strong><a name="item_posix">POSIX</a></strong>
-
-<li><strong><a name="item_date_3a_3aformat">Date::Format</a></strong>
-
-<li><strong><a name="item_file_3a_3acopy">File::Copy</a></strong>
-
-<li><strong><a name="item_file_3a_3apath">File::Path</a></strong>
-
-<li><strong><a name="item_date_3a_3aparse">Date::Parse</a></strong>
-
-<li><strong><a name="item_compress_3a_3azlib">Compress::Zlib</a></strong>
-
+<li><strong><a name="item_filehandle">FileHandle</a></strong><br />
+</li>
+<li><strong><a name="item_posix">POSIX</a></strong><br />
+</li>
+<li><strong><a name="item_date_3a_3aformat">Date::Format</a></strong><br />
+</li>
+<li><strong><a name="item_file_3a_3acopy">File::Copy</a></strong><br />
+</li>
+<li><strong><a name="item_file_3a_3apath">File::Path</a></strong><br />
+</li>
+<li><strong><a name="item_date_3a_3aparse">Date::Parse</a></strong><br />
+</li>
+<li><strong><a name="item_compress_3a_3azlib">Compress::Zlib</a></strong><br />
+</li>
 </ul>
-<li><strong><a name="item_your_logs_are_set_up_properly_2e_see__22apache_log">Your logs are set up properly. See ``Apache Logs''</a></strong>
-
-<li><strong><a name="item_syncronized">The time on your web servers is syncronized (think NTP)</a></strong>
-
-<li><strong><a name="item_you_use_webalizer_2c_http_2danalyze_2c_or_awstats_">You use webalizer, http-analyze, or AWstats for log processing</a></strong>
-
+<li><strong><a name="item_your_logs_are_set_up_properly_2e_see__22apache_log">Your logs are set up properly. See ``Apache Logs''</a></strong><br />
+</li>
+<li><strong><a name="item_syncronized">The time on your web servers is syncronized (think NTP)</a></strong><br />
+</li>
+<li><strong><a name="item_you_use_webalizer_2c_http_2danalyze_2c_or_awstats_">You use webalizer, http-analyze, or AWstats for log processing</a></strong><br />
+</li>
 </ol>
 <p>
 </p>

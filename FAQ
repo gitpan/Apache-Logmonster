@@ -76,8 +76,7 @@ Frequently Asked Questions
     1. You use cronolog
     2. You have enough memory to fit your largest zones log file into RAM
     3. You have the following Perl modules installed
-
-            Most systems have all but Compress::Zlib installed
+        Most systems have all but Compress::Zlib installed
 
         * FileHandle
         * POSIX

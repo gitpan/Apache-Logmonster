@@ -91,7 +91,7 @@ DESCRIPTION
 
 INSTALLATION
     Step 1 - Download and install (it's FREE!)
-        http://www.tnpi.net/store/product_info.php?cPath=2&products_id=40
+        http://tnpi.net/cart/index.php?crn=210&rn=385&action=show_detail
 
         Install like nearly every perl module:
 
@@ -120,7 +120,7 @@ INSTALLATION
           5 1 * * * /usr/local/sbin/logmonster -i day
 
     Step 5 - Read the FAQ
-        <http://www.tnpi.net/internet/www/logmonster/faq.shtml>
+        <http://tnpi.net/wiki/Logmonster_FAQ>
 
     Step 6 - Enjoy
         Allow Logmonster to make your life easier by handling your log
@@ -145,6 +145,7 @@ DEPENDENCIES
 
       Compress::Zlib
       Date::Parse (TimeDate)
+      Params::Validate
 
     Builtins
 
@@ -186,11 +187,13 @@ TODO
     necessary as wusage and http-analyze require logs to be fed in
     chronological order. Look at awstats logresolvemerge as a possibility.
 
+    Add config file setting for the location of awstats.pl
+
 SEE ALSO
-    http://www.tnpi.biz/internet/www/logmonster
+    http://tnpi.net/wiki/Logmonster
 
 LICENCE AND COPYRIGHT
-    Copyright (c) 2003-2006, The Network People, Inc. (info@tnpi.net) All
+    Copyright (c) 2003-2007, The Network People, Inc. (info@tnpi.net) All
     rights reserved.
 
     Redistribution and use in source and binary forms, with or without

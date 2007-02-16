@@ -1,3 +1,4 @@
+bin/install_freebsd_deps.sh
 Build.PL
 Changes
 doc/Changes.html
@@ -25,11 +26,14 @@ INSTALL
 lib/Apache/Logmonster.pm
 lib/Apache/Logmonster/Perl.pm
 lib/Apache/Logmonster/Utility.pm
+lib/Regexp/Log.pm
+lib/Regexp/Log/Monster.pm
 logmonster.conf
 logmonster.pl
 logmonster.tmproj
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 META.yml			Module meta-data (added by MakeMaker)
 README
 t/00.load.t

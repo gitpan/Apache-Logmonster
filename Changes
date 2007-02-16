@@ -1,16 +1,41 @@
             The latest version of this document is available at:
-          http://www.tnpi.net/internet/www/logmonster/changelog.shtml
+            http://www.tnpi.net/wiki/Logmonster_Changes
 
 Logmonster ChangeLog
-  3.00rc2 - Oct 14, 2006
-    updated usage examples, added FAQ.pod, FAQ, and FAQ.html updated
-    META.yml with new format added OUTPUT_AUTOFLUSH b/c printing to *STDERR
-    flushes immediately and mixed print statements did not. Reports are
-    better formatted now. added inc/Module/Install added Build.PL added
-    examples/daily_email_report.txt
+  3.02 and higher
+    3.02+ changes are on the web site.
 
-    Logmonster.pm debug was not being set properly report formatting tweaks
-    Utility.pm added _progress sub
+3.02+ changes are on the web site.
+  http://www.tnpi.net/wiki/Logmonster_Changes
+
+  3.01  - Feb 2, 2007
+    Added Params::Validate dependency to Makefile.PL
+
+    Fixed bug where time offset was being ignored.
+
+    Checks more locations for awstats.pl (needs to become a config file
+    settings).
+
+    Removed an unnecessary dependency on Mail::Toaster in Utility.pm.
+
+  3.00rc2 - Oct 14, 2006
+    * updated usage examples
+    * added FAQ
+    * updated META.yml to new format
+    * email report formatting
+        added OUTPUT_AUTOFLUSH b/c printing to *STDERR flushes immediately
+        and mixed print statements did not. Email report is better formatted
+        now.
+
+    * added inc/Module/Install
+    * added Build.PL
+    * added examples/daily_email_report.txt
+    * Logmonster.pm
+        debug was not being set properly, report formatting tweaks
+
+    * Utility.pm
+
+            added _progress sub
 
   3.00rc1 - Oct 02, 2006 (no public release)
    massive code overhaul

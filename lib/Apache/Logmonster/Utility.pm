@@ -4,7 +4,7 @@ use warnings;
 #use diagnostics;
 
 #
-# $Id: Utility.pm 523 2006-10-15 04:33:38Z matt $
+# $Id: Utility.pm 538 2007-02-16 20:20:23Z matt $
 #
 
 package Apache::Logmonster::Utility;
@@ -18,8 +18,9 @@ use Scalar::Util qw( openhandle );
 #use Smart::Comments;
 
 use vars qw($VERSION $fatal_err $err);
-$VERSION = '5.02';
+$VERSION = '5.05';
 
+use lib "inc";
 use lib "lib";
 
 sub new {
@@ -56,9 +57,9 @@ sub answer {
     }
     
     # only propmpt if we are running interactively
-    unless ( $self->is_interactive ) {
+    unless ( $self->is_interactive() ) {
         warn "     not interactive, can not prompt!\n";
-        return;
+        return $default;
     }
 
     # some basic input validation
@@ -1743,13 +1744,13 @@ sub install_if_changed {
 sub install_from_source_php {
 
 
-=begin install_from_source_php
+=begin install_from_sources_php
 
-  $utility->install_from_source_php();
+  $utility->install_from_sources_php();
 
 Downloads a PHP program and installs it. Not completed.
 
-=end install_from_source_php
+=end install_from_sources_php
 
 =cut
 
@@ -1768,17 +1769,17 @@ Downloads a PHP program and installs it. Not completed.
 
     if ( -d $package ) {
         if ( !$self->source_warning( $package, 1, $src ) ) {
-            carp "\ninstall_from_source_php: OK then, skipping install.";
+            carp "\ninstall_from_sources_php: OK then, skipping install.";
             return 0;
         }
 
         print
-          "install_from_source_php: removing any previous build sources.\n";
+          "install_from_sources_php: removing any previous build sources.\n";
 
         $self->syscmd( command => "rm -rf $package-*" ); # nuke any old versions
     }
 
-    print "install_from_source_php looking for existing sources...";
+    print "install_from_sources_php looking for existing sources...";
 
     my $tarball = "$package.tar.gz";
     if ( -e $tarball ) { print "found.\n"; }
@@ -1799,11 +1800,11 @@ Downloads a PHP program and installs it. Not completed.
         );
     }
     else {
-        print "install_from_source_php: using existing $tarball sources.\n";
+        print "install_from_sources_php: using existing $tarball sources.\n";
     }
 
     if ( $patches && @$patches[0] ) {
-        print "install_from_source_php: fetching patches...\n";
+        print "install_from_sources_php: fetching patches...\n";
         foreach my $patch (@$patches) {
             my $toaster = "$conf->{'toaster_dl_site'}$conf->{'toaster_dl_url'}";
             unless ($toaster) {
@@ -1814,14 +1815,14 @@ Downloads a PHP program and installs it. Not completed.
                     url => "$toaster/patches/$patch", 
                     debug=>$debug, ),
                 ) {
-                    croak "install_from_source_php: couldn't fetch " .
+                    croak "install_from_sources_php: couldn't fetch " .
                         "$toaster/$patches/$patch\n";
                 }
             }
         }
     }
     else {
-        print "install_from_source_php: no patches to fetch.\n";
+        print "install_from_sources_php: no patches to fetch.\n";
     }
 
     $self->archive_expand( archive => $tarball, debug => $debug )
@@ -1835,13 +1836,13 @@ Downloads a PHP program and installs it. Not completed.
             foreach my $patch (@$patches) {
                 my $patchbin = $self->find_the_bin( program => 'patch', debug=>$debug );
                 if ( ! $self->syscmd( command => "$patchbin < ../$patch", debug=>$debug ) ) {
-                    croak "install_from_source_php: patch failed: $!\n";
+                    croak "install_from_sources_php: patch failed: $!\n";
                 }
             }
         }
 
 #		unless ( @$targets[0] ) {}
-#			print "install_from_source_php: using default targets (./configure, make, make install).\n";
+#			print "install_from_sources_php: using default targets (./configure, make, make install).\n";
 #			@$targets = ( "./configure", "make", "make install")
 #		{};
 
@@ -2010,7 +2011,7 @@ EO_OOPS
 
             my $patchbin = $self->find_the_bin( bin => "patch", debug=>$debug );
             unless ( -x $patchbin ) {
-                print "install_from_source: FAILED, could not find patch!\n";
+                print "install_from_sources: FAILED, could not find patch!\n";
                 return 0;
             }
 
@@ -2148,29 +2149,33 @@ sub is_hashref {
 }
 
 sub is_interactive {
+
     ## no critic
-    # Sorry Damien, I don't want to require IO::Interactive
-    # just to pass this test
+    # shamelessly stolen from IO::Interactive
+    my $self = shift;
+    my ($out_handle) = (@_, select);    # Default to default output handle
 
     # Not interactive if output is not to terminal...
-    return 0 if not -t *STDOUT;
- 
+    return 0 if not -t $out_handle;
+
     # If *ARGV is opened, we're interactive if...
     if (openhandle *ARGV) {
         # ...it's currently opened to the magic '-' file
-        return -t *STDIN if $ARGV eq '-';
- 
+        return -t *STDIN if defined $ARGV && $ARGV eq '-';
+
         # ...it's at end-of-file and the next file is the magic '-' file
         return @ARGV>0 && $ARGV[0] eq '-' && -t *STDIN if eof *ARGV;
- 
+
         # ...it's directly attached to the terminal 
         return -t *ARGV;
     }
- 
+
     # If *ARGV isn't opened, it will be interactive if *STDIN is attached 
     # to a terminal and either there are no files specified on the command line
-    # or if there are one or more files and the first is the magic '-' file
-    return -t *STDIN && (@ARGV==0 || $ARGV[0] eq '-');
+    # or if there are files and the first is the magic '-' file
+    else {
+        return -t *STDIN && (@ARGV==0 || $ARGV[0] eq '-');
+    }
 }
 
 sub is_process_running {
@@ -2845,7 +2850,7 @@ sub source_warning {
         print "
 	$package sources are already present, indicating that you've already
 	installed $package. If you want to reinstall it, remove the existing
-	sources (rm -r $src/mail/$package) and re-run this script\n\n";
+	sources (rm -r $src/$package) and re-run this script\n\n";
         return 0 unless $clean;
     }
 
@@ -2902,7 +2907,7 @@ sub sudo {
     }
 
     print
-"\n\n\tWARNING: Couldn't find sudo. This may not be a problem but some features require root permissions and will not work without them. Having sudo can allow legitimate and limited root permission to non-root users. Some features of Apache::Logmonster may not work as expected without it.\n\n";
+"\n\n\tWARNING: Couldn't find sudo. This may not be a problem but some features require root permissions and will not work without them. Having sudo can allow legitimate and limited root permission to non-root users. Some features of Mail::Toaster may not work as expected without it.\n\n";
 
     # try installing sudo
     unless (
@@ -3269,7 +3274,8 @@ sub yes_or_no {
 
     # parameter validation here
     my %p = validate( @_, {
-            'question' => { type=>SCALAR },
+            'question' => { type=>SCALAR, optional=>1 },
+            'q'        => { type=>SCALAR, optional=>1 },
             'timeout'  => { type=>SCALAR, optional=>1 },
             'fatal'    => { type=>BOOLEAN, optional=>1, default=>1 },
             'debug'    => { type=>BOOLEAN, optional=>1, default=>1 },
@@ -3278,6 +3284,14 @@ sub yes_or_no {
 
     my ( $question, $timer ) = ( $p{'question'}, $p{'timeout'} );
 
+    # q is an alias for question
+    if ( !defined $question && defined $p{'q'} ) { $question = $p{'q'}; }
+
+    # this sub is useless without a question.
+    unless ($question) {
+        croak "question called incorrectly. RTFM. \n";
+    };
+ 
     # for 'make test' testing
     return 1 if ( $question eq "test" );
 
@@ -3437,13 +3451,13 @@ sub _progress_continue {
     return;
 };
 sub _progress_end {
-    my ($self, $mess) = @_;
+    my ($self,$mess) = @_;
     if ( $mess ) {
         print {*STDERR} "$mess\n";
     }
     else {
         print {*STDERR} "done\n";
-    }
+    };
     return;
 };
 
@@ -3602,7 +3616,7 @@ The advantage this sub has over a Pure Perl implementation is that it can utiliz
   # Purpose    : clean up old build stuff before rebuilding
   # Returns    : 0 - failure,  1 - success
   # Parameters : S - $dir - a directory or file. 
-  # Throws     : no exceptions
+  # Throws     : die on failure
   # Comments   : Running this will delete its contents. Be careful!
 
 
@@ -4240,8 +4254,7 @@ If sudo is not installed and you're running as root, it'll offer to install sudo
 
 =item try_mkdir
 
-tries to create a directory using perl's builtin mkdir
-
+try creating a directory using perl's builtin mkdir.
 
 =item validate_params
 
@@ -4306,17 +4319,6 @@ None known. Report any to author.
   make all errors raise exceptions
   write test cases for every method
   comments. always needs more comments.
-
-
-=head1 SEE ALSO
-
-The following are all man/perldoc pages: 
-
- Apache::Logmonster 
- logmonster.conf
- logmonster.pl
-
- http://www.tnpi.net/internet/www/logmonster/
 
 
 =head1 COPYRIGHT

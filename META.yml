@@ -1,12 +1,33 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Apache-Logmonster
-version:      3.00rc2
-version_from: logmonster.pl
-installdirs:  site
+---
+name: Apache-Logmonster
+version: 3.02
+author:
+  - "Matt Simerson (matt@tnpi.net)"
+abstract: Apache log file splitter, processor, sorter, etc
+license: bsd
 requires:
-    Compress::Zlib:                0
-    Date::Parse:                   0
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+  Compress::Zlib: 2.0
+  Date::Parse: 2.0
+  Params::Validate: 0.8
+generated_by: Module::Build version 0.2805
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
+provides:
+  Apache::Logmonster:
+    file: lib/Apache/Logmonster.pm
+    version: 3.02
+  Apache::Logmonster::Perl:
+    file: lib/Apache/Logmonster/Perl.pm
+    version: 5.00
+  Apache::Logmonster::Utility:
+    file: lib/Apache/Logmonster/Utility.pm
+    version: 5.05
+  Regexp::Log:
+    file: lib/Regexp/Log.pm
+    version: 0.04
+  Regexp::Log::Monster:
+    file: lib/Regexp/Log/Monster.pm
+    version: 0.04
+resources:
+  license: http://www.opensource.org/licenses/bsd-license.php

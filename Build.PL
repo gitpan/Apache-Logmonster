@@ -11,8 +11,9 @@ license            'bsd';
 perl_version       '5.005';
 
 # modules required at run time
-requires           'Compress::Zlib' => '0';
-requires           'Date::Parse'    => '2.0'; 
+requires           'Compress::Zlib'   => '2.0';
+requires           'Date::Parse'      => '2.0'; 
+requires           'Params::Validate' => '0.8'; 
 
 auto_include_deps ( );
 auto_install      ( -do_once => 1,  );

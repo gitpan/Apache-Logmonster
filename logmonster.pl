@@ -5,7 +5,7 @@ use warnings;
 package Apache::Logmonster;
 
 use vars qw($VERSION); 
-$VERSION  = '3.00rc2';
+$VERSION  = '3.02';
 
 use lib "lib";
 
@@ -32,11 +32,12 @@ if ( ! GetOptions (%command_line_options) ) {
 
 # a generic utility object that provides many useful functions
 my $utility = Apache::Logmonster::Utility->new();
-my $config  = $utility->parse_config( file =>"logmonster.conf", debug=>0 );
 my $banner  = "\n\t\t Apache Log Monster $VERSION by Matt Simerson \n\n";
+my $config  = $utility->parse_config( file =>"logmonster.conf", debug=>0 );
 
 # allow CLI to override clean option in config file
    $config->{'clean'} = $clean if defined $clean;
+   $config->{'time_offset'} = $bump if defined $bump;
 
 my $logmonster = Apache::Logmonster->new($config,$verbose);
 
@@ -49,6 +50,8 @@ if ( $verbose && ! $report_mode ) {
 : $verbose == 3 ? print "screaming at you (3).\n"
 : warn "unknown verbosity\n";
 };
+
+print $banner if $verbose;
 
 # run a few preliminary sanity tests
 $logmonster->check_config();
@@ -206,7 +209,7 @@ Understands and correctly deals with server aliases
 
 =item Step 1 - Download and install (it's FREE!)
 
-http://www.tnpi.net/store/product_info.php?cPath=2&products_id=40
+http://tnpi.net/cart/index.php?crn=210&rn=385&action=show_detail
 
 Install like nearly every perl module: 
 
@@ -235,7 +238,7 @@ Adjust the CustomLog and ErrorLog definitions. We make two changes, appending %v
 
 =item Step 5 - Read the FAQ
 
-L<http://www.tnpi.net/internet/www/logmonster/faq.shtml>
+L<http://tnpi.net/wiki/Logmonster_FAQ>
 
 =item Step  6 - Enjoy
 
@@ -257,6 +260,7 @@ Not perl builtins
 
   Compress::Zlib
   Date::Parse (TimeDate)
+  Params::Validate
 
 Builtins
 
@@ -297,15 +301,17 @@ Do something with error logs (other than just compress)
 
 If files to process are larger than 10MB, find a nicer way to sort them rather than reading them all into a hash. Now I create two hashes, one with data and one with dates. I sort the date hash, and using those sorted hash keys, output the data hash to a sorted file. This is necessary as wusage and http-analyze require logs to be fed in chronological order. Look at awstats logresolvemerge as a possibility.
 
+Add config file setting for the location of awstats.pl
+
 
 =head1 SEE ALSO
 
-http://www.tnpi.biz/internet/www/logmonster
+http://tnpi.net/wiki/Logmonster
 
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2003-2006, The Network People, Inc. (info@tnpi.net) All rights reserved.
+Copyright (c) 2003-2007, The Network People, Inc. (info@tnpi.net) All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 

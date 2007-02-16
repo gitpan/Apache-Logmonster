@@ -38,12 +38,12 @@ $conf->{'tmpdir'} = "t/trash";
 # set conf for subroutines
 $logmonster->{'conf'} = $conf;
 my $original_working_directory = cwd;
+#warn "my owd is $original_working_directory";
 
 my $log_fh;
 
 ## check_config
     ok( $logmonster->check_config(), 'check_config');
-
 
 ## get_log_dir
     $logmonster->{'conf'}->{'rotation_interval'} = "hour";

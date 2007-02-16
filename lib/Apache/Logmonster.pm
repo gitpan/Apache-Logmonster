@@ -5,6 +5,7 @@ use warnings;
 package Apache::Logmonster;
 
 use lib "lib";
+use Regexp::Log;
 
 use Carp;
 use Compress::Zlib;
@@ -13,10 +14,11 @@ use Date::Parse;
 use FileHandle;
 use File::Basename;
 use File::Copy;
+use Regexp::Log::Monster;
 
 use vars qw($VERSION $err);
 
-$VERSION  = '3.00';
+$VERSION  = '3.02';
 
 use Apache::Logmonster::Utility; 
 my $utility = Apache::Logmonster::Utility->new();
@@ -136,10 +138,31 @@ sub check_config {
         };
 	} 
 
-	unless ( defined $conf->{'vhost'} && -e $conf->{'vhost'} ) 
+	if ( ! defined $conf->{'vhost'} ) 
 	{
 		die "\nFATAL: you must edit logmonster.conf and set vhost!\n";
 	};
+
+    if ( $conf->{'time_offset'} ) {
+        my ($dd, $mm, $yy, $lm, $hh, $mn) = 
+            $utility->get_the_date( debug  => 0, ); 
+
+        my $interval = $self->{'rotation_interval'} || "day";
+        my $bump     = $conf->{'time_offset'};
+        my $logbase  = $conf->{'logbase'};
+
+        my $how_far_back = $interval eq "hour"  ? .04   # back 1 hour
+                        : $interval eq "month" ? $dd+1 # last month
+                        : 1;  # 1 day
+
+        ($dd, $mm, $yy, $lm, $hh, $mn) = 
+            $utility->get_the_date( bump=>$bump + $how_far_back, debug  => 0, ); 
+
+        unless ( $utility->yes_or_no(question=>"\nDoes the date $yy/$mm/$dd look correct? ") )
+        {
+            die "OK then, try again.\n";
+        };
+    };
 
     $utility->_progress_end("passed") if $debug==1;
 
@@ -460,10 +483,12 @@ sub feed_the_machine {
 		{
 			$self->check_awstats_file($domain, $statsdir);
 
+            my $aws_cgi = "/usr/local/www/awstats/cgi-bin";  # freebsd port installs here
+            $aws_cgi = "/usr/local/www/cgi-bin" unless ( -d $aws_cgi );
+            $aws_cgi = "/var/www/cgi-bin" unless ( -d $aws_cgi );
+
             my $awstats = $utility->find_the_bin(
-                bin =>"awstats.pl",  debug => 0,
-                dir =>"/usr/local/www/cgi-bin",
-            );
+                bin =>"awstats.pl",  debug => 0, dir => $aws_cgi, );
 			$cmd = "$awstats -config=$domain -logfile=$file";
 			printf "$awstats for \%-20s to $statsdir\n", $domain if $debug;
 			printf $REPORT "$awstats for \%-20s to $statsdir\n", $domain;
@@ -576,6 +601,11 @@ sub get_domains_list {
 
 	my $vconfig = $conf->{'vhost'};
 
+    # keyword test
+    if ( $vconfig =~ /<SITE>/ ) {
+        return $self->get_domains_list_from_directories();
+    };
+
     # the Apache vhosts are in a file (usually httpd.conf)
 	if ( -f $vconfig ) 
 	{
@@ -631,6 +661,70 @@ sub get_domains_list {
     print $REPORT "$vconfig is not a file or directory!\n";
 
     return;
+};
+
+sub get_domains_list_from_directories {
+    my $self = shift;
+
+    my $debug   = $self->{'debug'};
+    my $conf    = $self->{'conf'};
+	my $vconfig = $conf->{'vhost'};
+
+    my (%domains, @symlink_dirs);
+    print "\nAuto-detecting vhosts from domain directories.\n";
+
+    my ($prefix, $suffix) = $vconfig =~ /(.*)<SITE>(.*)/g;
+
+    my @dirs_found = `ls -d $prefix*$suffix`;
+    chomp @dirs_found;
+    DIR: foreach my $raw_dir ( @dirs_found ) {
+
+        my ($vhost_name) = $raw_dir =~ /$prefix(.*)$suffix/;
+
+        # if a symlink, then assume a vhost alias, process later
+        if ( -l "$prefix/$vhost_name"  ) {
+            push @symlink_dirs, $raw_dir;
+            next DIR;
+        };
+
+        # set up the hash values we need later
+        $domains{$vhost_name} = { 
+            'name'    => $vhost_name, 
+            'docroot' => $prefix.$vhost_name.$suffix,
+            'domlist' => $vhost_name,
+        };
+    };
+
+    # now deal with those vhost aliases
+    foreach ( @symlink_dirs ) {
+        my ($vhost_name) = $_ =~ /$prefix(.*)$suffix/;
+
+        my $symlink_target = readlink "$prefix/$vhost_name";
+
+        # if the target of the symlink has been added to our list...
+        if ( defined $domains{$symlink_target}->{'domlist'} ) {
+            # add our hostname to the domlist
+            $domains{$symlink_target}{'domlist'} .= ":$vhost_name";
+
+            # and add ourself to the aliases list
+            if ( defined $domains{$symlink_target}->{'aliases'} ) {
+                $domains{$symlink_target}{'aliases'} .= ":$vhost_name";
+            } else {
+                $domains{$symlink_target}{'aliases'} = $vhost_name;
+            };
+        } else {
+            # the target doesn't exist, so we are the "main" domain.
+            $domains{$vhost_name} = { 
+                'name'    => $vhost_name, 
+                'docroot' => $prefix.$vhost_name.$suffix,
+                'domlist' => $vhost_name,
+            };
+        };
+    };
+
+#    use Data::Dumper;
+#    warn Dumper %domains;
+    return \%domains;
 };
 
 sub get_vhosts_from_file {
@@ -807,20 +901,15 @@ sub get_log_dir {
                 bump   => $bump + $how_far_back,
                 debug  => $debug>1 ? 1 : 0,
               );
-
-		unless ( $utility->yes_or_no("\nDoes the date $yy/$mm/$dd look correct? ") ) 
-		{
-			croak "OK then, try again.\n"; 
-		};
 	}
 	else 
 	{
 		($dd, $mm, $yy, $lm, $hh, $mn) 
             = $utility->get_the_date(
-                    bump=>$how_far_back,
-                    debug=>$debug>1 ? 1 : 0,
+                    bump  => $how_far_back,
+                    debug => $debug > 1 ? 1 : 0,
                 );
-	};	
+	};
 
     my $logdir = $interval eq "hour"  ? "$logbase/$yy/$mm/$dd/$hh"
                : $interval eq "day"   ? "$logbase/$yy/$mm/$dd"
@@ -1289,6 +1378,19 @@ sub split_logs_to_vhosts {
 
 	my $domkey_ref = $self->turn_domains_into_sort_key($domains_ref);
 
+    # use my Regexp::Log::Monster
+    my $regexp_parser = Regexp::Log::Monster->new(
+        format  => ':logmonster',
+        capture => [qw( host vhost status bytes ref ua )],
+		# Apache fields
+			# host, ident, auth, date, request, status, bytes, referer, agent, vhost
+		# returned from parser (available for capture) as: 
+			# host, rfc, authuser, date, ts, request, req, status, bytes, referer, ref, 
+			# useragent, ua, vhost
+    );
+    my @captured_fields = $regexp_parser->capture;
+    my $re = $regexp_parser->regexp;
+
 	foreach my $file (@webserver_logs)
 	{
 		unless ( $gz = gzopen($file, "rb") )
@@ -1300,34 +1402,65 @@ sub split_logs_to_vhosts {
         my $lines = 0;
         $utility->_progress_begin("\t parsing entries from $file") if $debug;
 
-		while ( $gz->gzreadline($_) > 0 ) 
+		LOGENTRY: while ( $gz->gzreadline($_) > 0 ) 
 		{
 			chomp $_;
             $lines++;
             $utility->_progress_continue() if ($debug && $lines =~/00$/ );
-			# host, ident, auth, date, request, status, bytes, referer, agent, vhost
+            
+            my %data;
+            @data{@captured_fields} = /$re/;    # no need for /o, it's a compiled regexp
 
-# my ($vhost) = $_ =~ / ([a-z-\.]+)$/;
-# updated regexp to support numeric vhosts
+            if ( $conf->{'spam_check'} ) {
+                my $spam_score = 0;
 
-# regexp should check for logs in these formats:
-#
-# Apache common (CLF)
-# host ident auth date \"request\" status bytes
-# $_ =~ /[0-9]{3} [0-9]+$/
-#
-# standard Apache combined:
-# host ident auth date \"request\" status bytes \"referer\"  \"agent\"
-# $_ =~ /[0-9]{3} [0-9]+ \".*\" \".*\"$/
-#
-# logmonster combined:
-# host ident auth date \"request\" status bytes \"referer\"  \"agent\" %v
-# $_ =~ /[0-9]{3} [0-9]+ \".*\" \".*\" [a-z0-9-.]+$/
-#
-# If we find a log format other than logmonster's, an error should raise 
-# and tell the user how to correct it.
+                # check for spam quotient
+                if ( $data{'status'} ) {
+                    if ( $data{'status'} == 404 ) {    	# check for 404 status
+                        # a 404 error alone is not a sign of naughtiness
+                        $spam_score++;
+                    };
 
-			my ( $vhost) = $_ =~ / ([0-9a-z-\.]+)$/i; 
+                    if ( $data{'status'} == 412 ) {
+                        # a 412 error was likely my Apache config slapping them
+                        $spam_score++;
+                    };
+
+                    if ( $data{'status'} == 403 ) {
+                        # a 403 error was almost certainly my Apache config slapping them
+                        $spam_score += 2;
+                    };
+                };
+
+                # nearly all of my referer spam has a # ending the referer string
+                if ( $data{'ref'} && $data{'ref'} =~ /#$/ ) {
+                    $spam_score += 2;
+                };
+
+                # should check for invalid/suspect useragent strings here
+                if ( $data{'ua'} ) {
+                    $data{'ua'} =~ /crazy/ixms  ? $spam_score += 1
+                    : $data{'ua'} =~ /email/      ? $spam_score += 3
+#                : $data{'ua'} =~ /windows/    ? $spam_score += 1
+                    : print "";
+                };
+
+                # if we fail more than one spam test...
+                if ( $spam_score > 2 ) {
+                    $count{'spam'}++;
+                    if ( defined $data{'bytes'} && $data{'bytes'} =~ /[0-9]+/ ) {
+                        $count{'bytes'} += $data{'bytes'} 
+                    };
+
+                    $count{'spam_agents'}{$data{'ua'}}++;
+                    $count{'spam_referers'}{$data{'ref'}}++;
+
+#				printf "%3s - %30s - %30s \n", $data{'status'}, $data{'ref'}, $data{'ua'};
+                    next LOGENTRY;     # skips processing the line
+                }
+            };
+
+			my $vhost = $data{'vhost'};
 			if (!$vhost) 
 			{
 				# domain names can only have alphanumeric, - and . characters
@@ -1335,9 +1468,8 @@ sub split_logs_to_vhosts {
 				# if you have these, read the logmonster FAQ and set up your Apache
 				# logs correctly!
 
-				print "ERROR: You have log entries without vhost tags appended to them!"
-                 . " Read the logmonster FAQ and set up your Apache logging correctly.\n"
-                  if $debug;
+				print "ERROR: You have invalid log entries!"
+                 . " Read the FAQ for setting up logging correctly.\n" if $debug;
                 print $_ . "\n" if $debug>2;
 				$bad++;
 				next;
@@ -1353,13 +1485,13 @@ sub split_logs_to_vhosts {
 			{
 				my $fh = $fhs{$main_dom};
 				print $fh "$_\n";
+			    $count{$main_dom}++;
 			}
 			else 
 			{
 				print "\nsplit_logs_to_vhosts: the main domain for $vhost is missing!\n" if $debug>1;
 				$orphans{$vhost} = $vhost;
 			};
-			$count{$vhost}++;
 		};
 		$gz->gzclose();
 
@@ -1398,6 +1530,8 @@ sub split_logs_to_vhosts {
 		};
 	};
 
+    $self->report_spam_hits(\%count, $REPORT);
+
 	if ($bad)
 	{
 		printf "Skipped: %15.0f lines to unknown.\n", $bad if $debug;
@@ -1408,6 +1542,49 @@ sub split_logs_to_vhosts {
 
     return 1;
 };
+
+sub report_spam_hits {
+
+    my $self = shift;
+    my $count = shift;
+    my $REPORT = shift;
+
+    return if ( ! $count->{'spam'} );
+
+    my $conf  = $self->{'conf'};
+    my $debug = $self->{'debug'};
+
+    if ( $conf->{'report_spam_user_agents'} ) {
+
+        printf "Referer spammers hit you $count->{'spam'} times" if $debug;
+
+        if ($debug && $count->{'bytes'}) {
+            if ($count->{'bytes'} > 1000000) { 
+                $count->{'bytes'} = sprintf "%.2f MB", $count->{'bytes'} / 1000000; 
+            } else {
+                $count->{'bytes'} = sprintf "%.2f KB", $count->{'bytes'} / 1000;
+            };
+
+            print " and wasted " . $count->{'bytes'} . " of your bandwidth.";
+        };
+        print "\n\n" if $debug;
+
+        printf $REPORT "Referer Spam: %15.0f lines\n", $count->{'spam'};
+
+        my $spamagents = $count->{'spam_agents'};
+        foreach my $value ( sort {$spamagents->{$b} cmp $spamagents->{$a} } keys %$spamagents ) {
+            print "\t $spamagents->{$value} \t $value\n";
+        };
+    };
+
+    if ( $conf->{'report_spam_referrers'} ) {
+        # This report can get very, very long
+        my $spam_referers = $count->{'spam_referers'};
+        foreach my $value ( sort {$spam_referers->{$b} <=> $spam_referers->{$a} } keys %$spam_referers ) {
+            print "$spam_referers->{$value} \t $value\n";
+        };
+    };
+}
 
 sub turn_domains_into_sort_key {
 

@@ -103,9 +103,9 @@ The way to process old logs with logmonster is to use the -b option. In our exam
 
 =item 3. You have the following Perl modules installed
 
-=over
-
 Most systems have all but Compress::Zlib installed
+
+=over
 
 =item * FileHandle
 

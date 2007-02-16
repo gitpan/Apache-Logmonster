@@ -1,10 +1,8 @@
-<?xml version="1.0" ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>Logmonster ChangeLog</title>
-<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<link rev="made" href="mailto:matt@cadillac.net" />
+<link rev="made" href="mailto:root@b01.apple.com" />
 </head>
 
 <body style="background-color: white">
@@ -18,6 +16,8 @@
 	<li><a href="#logmonster_changelog">Logmonster ChangeLog</a></li>
 	<ul>
 
+		<li><a href="#3_02_and_higher">3.02 and higher</a></li>
+		<li><a href="#3_01__feb_2__2007">3.01  - Feb 2, 2007</a></li>
 		<li><a href="#3_00rc2__oct_14__2006">3.00rc2 - Oct 14, 2006</a></li>
 		<li><a href="#3_00rc1__oct_02__2006__no_public_release_">3.00rc1 - Oct 02, 2006 (no public release)</a></li>
 		<ul>
@@ -76,18 +76,43 @@ Author: Matt Simerson.</p> <p>[
 <h1><a name="logmonster_changelog">Logmonster ChangeLog</a></h1>
 <p>
 </p>
+<h2><a name="3_02_and_higher">3.02 and higher</a></h2>
+<p>3.02+ changes are on the web site.</p>
+<a href="http://www.tnpi.net/wiki/Logmonster_Changes">http://www.tnpi.net/wiki/Logmonster_Changes</a><p>
+</p>
+<h2><a name="3_01__feb_2__2007">3.01  - Feb 2, 2007</a></h2>
+<p>Added Params::Validate dependency to Makefile.PL</p>
+<p>Fixed bug where time offset was being ignored.</p>
+<p>Checks more locations for awstats.pl (needs to become a config file settings).</p>
+<p>Removed an unnecessary dependency on Mail::Toaster in Utility.pm.</p>
+<p>
+</p>
 <h2><a name="3_00rc2__oct_14__2006">3.00rc2 - Oct 14, 2006</a></h2>
-<p>updated usage examples, added FAQ.pod, FAQ, and FAQ.html
-updated META.yml with new format
-added OUTPUT_AUTOFLUSH b/c printing to *STDERR flushes immediately and mixed print statements did not. Reports are better formatted now.
-added inc/Module/Install
-added Build.PL
-added examples/daily_email_report.txt</p>
-<p>Logmonster.pm
-   debug was not being set properly
-   report formatting tweaks
-Utility.pm
-	added _progress sub</p>
+<ul>
+<li><strong><a name="item_updated_usage_examples">updated usage examples</a></strong><br />
+</li>
+<li><strong><a name="item_added">added FAQ</a></strong><br />
+</li>
+<li><strong><a name="item_updated_meta_2eyml_to_new_format">updated META.yml to new format</a></strong><br />
+</li>
+<li><strong><a name="item_email_report_formatting">email report formatting</a></strong><br />
+</li>
+added OUTPUT_AUTOFLUSH b/c printing to *STDERR flushes immediately and mixed print statements did not. Email report is better formatted now.
+<p></p>
+<li><strong><a name="item_added_inc_2fmodule_2finstall">added inc/Module/Install</a></strong><br />
+</li>
+<li><strong><a name="item_added_build_2epl">added Build.PL</a></strong><br />
+</li>
+<li><strong><a name="item_added_examples_2fdaily_email_report_2etxt">added examples/daily_email_report.txt</a></strong><br />
+</li>
+<li><strong><a name="item_logmonster_2epm">Logmonster.pm</a></strong><br />
+</li>
+debug was not being set properly, report formatting tweaks
+<p></p>
+<li><strong><a name="item_utility_2epm">Utility.pm</a></strong><br />
+</li>
+<p>added _progress sub</p>
+</ul>
 <p>
 </p>
 <h2><a name="3_00rc1__oct_02__2006__no_public_release_">3.00rc1 - Oct 02, 2006 (no public release)</a></h2>
@@ -106,32 +131,31 @@ added doc/*</p>
 </p>
 <h2><a name="2_77__no_public_release">2.77 - no public release</a></h2>
 <ul>
-<li><strong><a name="item_create_daily_userlogs">create daily userlogs</a></strong>
-
-<p>new feature submitted by Gernot Hueber.</p>
+<li><strong><a name="item_create_daily_userlogs">create daily userlogs</a></strong><br />
 </li>
-<li><strong><a name="item_autogenerate_vhost_stat_dirs">autogenerate vhost stat dirs</a></strong>
-
-<p>new feature funded by Lewis Bergman: statsdir can be automatically created if it does not exist. Set statsdir_policy = create in logmonster.conf to enable this feature.</p>
+new feature submitted by Gernot Hueber.
+<p></p>
+<li><strong><a name="item_autogenerate_vhost_stat_dirs">autogenerate vhost stat dirs</a></strong><br />
 </li>
-<li><strong><a name="item_incremental_awstats_config_files_2e">incremental awstats config files.</a></strong>
-
-<p>New feature by Lewis: Instead of having a full awstats.conf file for each vhost, each vhost has its own file that contains only specific info for that vhost and includes the generic /etc/awstats/awstats.conf file with the ``global'' settings.</p>
+new feature funded by Lewis Bergman: statsdir can be automatically created if it does not exist. Set statsdir_policy = create in logmonster.conf to enable this feature.
+<p></p>
+<li><strong><a name="item_incremental_awstats_config_files_2e">incremental awstats config files.</a></strong><br />
 </li>
-<li><strong><a name="item_added_loguser_and_loggroup_to__2econf">added loguser and loggroup to .conf</a></strong>
-
+New feature by Lewis: Instead of having a full awstats.conf file for each vhost, each vhost has its own file that contains only specific info for that vhost and includes the generic /etc/awstats/awstats.conf file with the ``global'' settings.
+<p></p>
+<li><strong><a name="item_added_loguser_and_loggroup_to__2econf">added loguser and loggroup to .conf</a></strong><br />
+</li>
 </ul>
 <p>
 </p>
 <h2><a name="2_76__jun_04__2005">2.76 - Jun 04, 2005</a></h2>
 <dl>
-<dt><strong><a name="item_statsdir_can_now_be_an_absolute_path">statsdir can now be an absolute path</a></strong>
-
+<dt><strong><a name="item_statsdir_can_now_be_an_absolute_path">statsdir can now be an absolute path</a></strong><br />
+</dt>
 <dd>
-<p>statsdir can now be an absolute path (ex: /var/www/html).  If so, processor output will be stored in statsdir/vhost. Otherwise, it works as it used to and output goes to vhost/statsdir. This is useful if you have a seperate machine (not the web server) that does the processing and that system does not have access to the vhost docroot.</p>
+statsdir can now be an absolute path (ex: /var/www/html).  If so, processor output will be stored in statsdir/vhost. Otherwise, it works as it used to and output goes to vhost/statsdir. This is useful if you have a seperate machine (not the web server) that does the processing and that system does not have access to the vhost docroot.
 </dd>
-</li>
-</dl>
+<p></p></dl>
 <p>
 </p>
 <h2><a name="2_75__feb_05__2005">2.75 - Feb 05, 2005</a></h2>
