@@ -1,6 +1,6 @@
 ---
 name: Apache-Logmonster
-version: 3.02
+version: 3.03
 author:
   - "Matt Simerson (matt@tnpi.net)"
 abstract: Apache log file splitter, processor, sorter, etc
@@ -16,7 +16,7 @@ meta-spec:
 provides:
   Apache::Logmonster:
     file: lib/Apache/Logmonster.pm
-    version: 3.02
+    version: 3.03
   Apache::Logmonster::Perl:
     file: lib/Apache/Logmonster/Perl.pm
     version: 5.00

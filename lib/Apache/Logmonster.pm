@@ -18,7 +18,7 @@ use Regexp::Log::Monster;
 
 use vars qw($VERSION $err);
 
-$VERSION  = '3.02';
+$VERSION  = '3.03';
 
 use Apache::Logmonster::Utility; 
 my $utility = Apache::Logmonster::Utility->new();
@@ -422,7 +422,7 @@ sub feed_the_machine {
     my $debug       = $self->{'debug'};
     my $conf        = $self->{'conf'};
     my $REPORT      = $self->{'report'};
-    my $interval    = $self->{'rotational_interval'};
+    my $interval    = $self->{'rotation_interval'};
 
 	my ($cmd, $r);
 
@@ -622,7 +622,8 @@ sub get_domains_list {
 	};
 
     $err = "$vconfig is a directory.\n";
-    print "\n\t$err" if $debug>1; print $REPORT $err;
+    print "\n\t$err" if $debug>1; 
+    print $REPORT $err if $REPORT;
 
     # the Apache vhosts are in a directory
 	if ( -d $vconfig )
@@ -742,7 +743,8 @@ sub get_vhosts_from_file {
 	my $count = 0;
 
     $err = "\tretrieving from $file.\n";
-	print $err if $debug>1; print $REPORT $err;
+	print $err if $debug>1; 
+    print $REPORT $err if $REPORT;
 
 	LINE: 
     foreach my $line ( $utility->file_read(file=>$file) ) {
@@ -869,7 +871,7 @@ sub get_vhosts_from_file {
 	}
 
     print "done.\n" if $debug>3;
-	print $REPORT "get_domains_from_file: done.\n";
+	print $REPORT "get_domains_from_file: done.\n" if $REPORT;
 	return \%tmp;
 };
 
@@ -880,7 +882,7 @@ sub get_log_dir {
     my $conf  = $self->{'conf'};
 
     my $interval = $self->{'rotation_interval'} || "day";
-
+ 
     unless ( $conf ) {
         croak "get_log_dir: \$conf is not set!\n";
     };
@@ -1702,6 +1704,10 @@ checks your vhosts setting in logmonster.conf to determine where to find your Ap
 
 If successful, it returns a hashref of elements.
 
+=item get_domains_list_from_directories
+
+Determines your list of domain and domain aliases based on presense of directories and symlinks on the file system. See the FAQ for details.
+
 =item get_vhosts_from_file
 
 Parses a file looking for virtualhost declarations. It stores several attributes about each vhost including: servername, serveralias, and documentroot as these are needed to determine where to output logfiles and statistics to.
@@ -1731,6 +1737,11 @@ and is expected to be called via a SNMP agent.
 =item report_close
 
 Accepts a filehandle, which it then closes. 
+
+
+=item report_spam_hits
+
+Appends information about referrer spam to the logmonster -v report. An example of that report can be seen here: http://www.tnpi.net/wiki/Referral_Spam
 
 
 =item report_open

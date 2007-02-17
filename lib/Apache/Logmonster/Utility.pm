@@ -393,8 +393,6 @@ sub chown_system {
         $self->_invalid_params( sub => 'chown_system' );
     }
 
-    # prepend sudo if necessary (and available)
-    my $sudo = $self->sudo( debug => $debug );    
     my $chown = $self->find_the_bin(
         program => 'chown',
         fatal   => $fatal,
@@ -407,7 +405,11 @@ sub chown_system {
     $cmd .= ":$group" if $group;
     $cmd .= " $dir";
 
-    $cmd = "$sudo $cmd" if ($sudo);
+    # prepend sudo if necessary (and available)
+    if ( ! -w $dir ) {
+        my $sudo = $self->sudo( debug => $debug );    
+        $cmd = "$sudo $cmd" if $sudo;
+    };
 
     print "chown_system: cmd: $cmd\n" if $debug;
 
@@ -522,14 +524,21 @@ sub file_archive {
             'file'    => { type=>SCALAR },
             'fatal'   => { type=>BOOLEAN, optional=>1, default=>1 },
             'debug'   => { type=>BOOLEAN, optional=>1, default=>1 },
+            'sudo'    => { type=>BOOLEAN, optional=>1, default=>1 },
         }
     );
 
-    my ( $file, $fatal, $debug ) = ($p{'file'}, $p{'fatal'}, $p{'debug'});
+    my ( $file, $fatal, $debug, $try_sudo ) 
+        = ($p{'file'}, $p{'fatal'}, $p{'debug'}, $p{'sudo'} );
 
     my $date = time;
 
     # see if we can write to both files (new & archive) with current user
+    if ( ! -e $file ) {
+        print "file_archive: the file to back up ($file) is missing!\n" if $debug;
+        return 0;
+    };
+
     if (
         $self->is_writable(
             file  => $file,
@@ -554,24 +563,22 @@ sub file_archive {
     # since we failed with existing permissions, try to escalate
     if ( $< != 0 )    # we're not root
     {
-        my $sudo = $self->find_the_bin(
-            program => 'sudo',
-            debug   => $debug,
-            fatal   => $fatal
-        );
-        my $cp = $self->find_the_bin(
-            program => 'cp',
-            debug   => $debug,
-            fatal   => $fatal
-        );
+        if ( $try_sudo ) {
+            my $sudo = $self->sudo( debug => $debug, fatal => $fatal );
+            my $cp = $self->find_the_bin(
+                program => 'cp',
+                debug   => $debug,
+                fatal   => $fatal
+            );
 
-        if ( $sudo && -x $sudo && $cp && -x $cp ) {
-            $self->syscmd( command => "$sudo $cp $file $file.$date", debug=>$debug, fatal=>$fatal );
-        }
-        else {
-            print "file_archive: sudo or cp was missing, could not escalate.\n"
-              if $debug;
-        }
+            if ( $sudo && $cp && -x $cp ) {
+                $self->syscmd( command => "$sudo $cp $file $file.$date", debug=>$debug, fatal=>$fatal );
+            }
+            else {
+                print "file_archive: sudo or cp was missing, could not escalate.\n"
+                if $debug;
+            }
+        };
     }
 
     if ( -e "$file.$date" ) {
