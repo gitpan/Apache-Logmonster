@@ -26,3 +26,12 @@ if [ -z "$INSTALLED" ]; then
 else
     echo "Params::Validate is installed."
 fi
+
+INSTALLED=`/usr/sbin/pkg_info | grep Regexp`
+if [ -z "$INSTALLED" ]; then
+	echo "installing p5-Regexp-Log"
+	cd /usr/ports/textproc/p5-Regexp-Log
+	make install distclean
+else
+    echo "Regexp::Log is installed."
+fi

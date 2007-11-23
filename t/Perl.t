@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# $Id: Perl.t 502 2006-10-02 22:42:20Z matt $
+# $Id: Perl.t 587 2007-11-22 06:44:39Z matt $
 #
 use strict;
 #use warnings;
@@ -8,6 +8,7 @@ use Cwd;
 use English qw( -no_match_vars );
 use Test::More 'no_plan';
 
+use lib "inc";
 use lib "lib";
 
 BEGIN { use_ok( 'Apache::Logmonster::Perl' ); }

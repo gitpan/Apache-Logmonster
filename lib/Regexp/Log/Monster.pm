@@ -77,17 +77,17 @@ using the keyword 'common'.
 # the regexps that match the various fields
 %REGEXP = (
 #	'%host' => '(?#=host)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?#!host)', 	# IPv4 only
-	'%host' => '(?#=host)\S+(?#!host)',					# numeric or name of remote host
-	'%rfc' => '(?#=rfc).*?(?#!rfc)',					# rfc931
+	'%host'     => '(?#=host)\S+(?#!host)',					# numeric or name of remote host
+	'%rfc'      => '(?#=rfc).*?(?#!rfc)',					# rfc931
 	'%authuser' => '(?#=authuser).*?(?#!authuser)',				# authuser
-	'%date' => '(?#=date)\[(?#=ts)\d{2}\/\w{3}\/\d{4}(?::\d{2}){3} [-+]\d{4}(?#!ts)\](?#!date)',
+	'%date'     => '(?#=date)\[(?#=ts)\d{2}\/\w{3}\/\d{4}(?::\d{2}){3} [-+]\d{4}(?#!ts)\](?#!date)',
 										# [date] (see note)
-	'%request'   => '(?#=request)\"(?#=req).*?(?#!req)\"(?#!request)',	# "request"
-	'%status'    => '(?#=status)\d+(?#!status)',				# status
-	'%bytes'     => '(?#=bytes)-|\d+(?#!bytes)',				# bytes
-	'%referer'   => '(?#=referer)\"(?#=ref).*?(?#!ref)\"(?#!referer)',	# "referer"
-	'%useragent' => '(?#=useragent)\"(?#=ua).*?(?#!ua)\"(?#!useragent)',	# "user_agent"
-	'%vhost'     => '(?#=vhost)\S+(?#!vhost)',				# name of local vhost
+	'%request'  => '(?#=request)\"(?#=req).*?(?#!req)\"(?#!request)',	# "request"
+	'%status'   => '(?#=status)\d+(?#!status)',				# status
+	'%bytes'    => '(?#=bytes)-|\d+(?#!bytes)',				# bytes
+	'%referer'  => '(?#=referer)\"(?#=ref).*?(?#!ref)\"(?#!referer)',	# "referer"
+	'%useragent'=> '(?#=useragent)\"(?#=ua).*?(?#!ua)\"(?#!useragent)',	# "user_agent"
+	'%vhost'    => '(?#=vhost)\S+(?#!vhost)',				# name of local vhost
 );
 
 # note: date is in the format [01/Jan/1997:13:07:21 -0600]

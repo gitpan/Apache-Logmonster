@@ -7,6 +7,7 @@ use English qw( -no_match_vars );
 use Test::More 'no_plan';
 
 use lib "lib";
+use lib "inc";
 
 BEGIN { 
     use_ok( 'Apache::Logmonster' );

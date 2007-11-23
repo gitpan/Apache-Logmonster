@@ -4,8 +4,8 @@ use warnings;
 
 package Apache::Logmonster;
 
+use lib "inc";
 use lib "lib";
-use Regexp::Log;
 
 use Carp;
 use Compress::Zlib;
@@ -14,6 +14,7 @@ use Date::Parse;
 use FileHandle;
 use File::Basename;
 use File::Copy;
+use Regexp::Log;
 use Regexp::Log::Monster;
 
 use vars qw($VERSION $err);
@@ -924,7 +925,7 @@ sub get_log_dir {
 
 sub install_default_awstats_conf {
 
-    my $lines = <<'EO_AWSTATS_CONF';
+    my @lines = <<'EO_AWSTATS_CONF';
 # installed by logmonster
 LogFile="gzip -d </var/log/apache/%YYYY-24/%MM/%DD-24/access.log.gz |"
 LogFormat = "%host %other %logname %time1 %methodurl %code %bytesd %refererquot %uaquot %virtualname"
@@ -1091,7 +1092,7 @@ EO_AWSTATS_CONF
         file  => "$statsdir/awstats.conf",
         debug => 0,
         fatal => 0,
-        lines => $lines,
+        lines => \@lines,
     ) or carp "couldn't install $statsdir/awstats.conf: $!\n";
 };
 
@@ -1307,11 +1308,11 @@ sub split_logs_to_vhosts {
 # sort the log files (create a hash with non-obvious data used to sort the 
 # contents of another hash) is called a Schwartzian Transform. It is rather 
 # fun to learn that something I thought up and wrote many years ago actually
-# has a name and is a recommended technique.
+# has a name and is a recommended technique. I should read more...
 
-    my $self        = shift;
-	my $domains_ref = shift;
+    my ($self, $domains_ref) = @_;
 
+    # sanity check our required argument
     unless ( $domains_ref && $utility->is_hashref($domains_ref) ) {
         croak "split_logs_to_vhosts called incorrectly!";
     };
@@ -1327,6 +1328,7 @@ sub split_logs_to_vhosts {
 
 	my @webserver_logs = <$dir/*.gz>;
 
+    # make sure we have logs to process
 	if ( ! $webserver_logs[0] or $webserver_logs[0] eq "" ) 
 	{
         $err =  "WARNING: No web server log files found!\n";
@@ -1349,8 +1351,7 @@ sub split_logs_to_vhosts {
 
 	my $key_count = keys %$domains_ref;
 
-	unless ( $key_count )
-	{
+	unless ( $key_count ) {
         $err = "\nHey, you have no vhosts! You must have at least one!";
 		print $REPORT $err . "\n";
 		die $err;
@@ -1358,13 +1359,13 @@ sub split_logs_to_vhosts {
 
     print "\t output working dirs is $dir/doms\n" if $debug>1;
 
+    # open a file for each vhost
 	foreach (keys %$domains_ref)
 	{
 		my $name = $domains_ref->{$_}->{'name'};
 
 		my $fh = new FileHandle;  # create a file handle for each ServerName
 		$fhs{$name} = $fh;        # store in a hash keyed off the domain name
-
 
 		if ( open($fh, ">", "$dir/doms/$name")  ) {
             if ($debug>1) {
@@ -1413,6 +1414,22 @@ sub split_logs_to_vhosts {
             my %data;
             @data{@captured_fields} = /$re/;    # no need for /o, it's a compiled regexp
 
+            # make sure the log format has the vhost tag appended
+			my $vhost = $data{'vhost'};
+			if (!$vhost) 
+			{
+				# domain names can only have alphanumeric, - and . characters
+				# the regexp catches any entries without the vhost appended to them
+				# if you have these, read the logmonster FAQ and set up your Apache
+				# logs correctly!
+
+				print "ERROR: You have invalid log entries!"
+                 . " Read the FAQ for setting up logging correctly.\n" if $debug;
+                print $_ . "\n" if $debug>2;
+				$bad++;
+				next;
+			};
+
             if ( $conf->{'spam_check'} ) {
                 my $spam_score = 0;
 
@@ -1442,13 +1459,14 @@ sub split_logs_to_vhosts {
                 # should check for invalid/suspect useragent strings here
                 if ( $data{'ua'} ) {
                     $data{'ua'} =~ /crazy/ixms  ? $spam_score += 1
-                    : $data{'ua'} =~ /email/      ? $spam_score += 3
+                    : $data{'ua'} =~ /email/i   ? $spam_score += 3
 #                : $data{'ua'} =~ /windows/    ? $spam_score += 1
                     : print "";
                 };
 
                 # if we fail more than one spam test...
-                if ( $spam_score > 2 ) {
+                if ( $spam_score > 2 ) 
+                {
                     $count{'spam'}++;
                     if ( defined $data{'bytes'} && $data{'bytes'} =~ /[0-9]+/ ) {
                         $count{'bytes'} += $data{'bytes'} 
@@ -1460,27 +1478,20 @@ sub split_logs_to_vhosts {
 #				printf "%3s - %30s - %30s \n", $data{'status'}, $data{'ref'}, $data{'ua'};
                     next LOGENTRY;     # skips processing the line
                 }
+# TODO: also keep track of ham referers, and print in referer spam reports, so
+# that I can see which UA are entirely spammers and block them in my Apache
+# config.
+#                else 
+#                {
+#                    $count{'ham_referers'}{$data{'ref'}}++;
+#                }
             };
-
-			my $vhost = $data{'vhost'};
-			if (!$vhost) 
-			{
-				# domain names can only have alphanumeric, - and . characters
-				# the regexp catches any entries without the vhost appended to them
-				# if you have these, read the logmonster FAQ and set up your Apache
-				# logs correctly!
-
-				print "ERROR: You have invalid log entries!"
-                 . " Read the FAQ for setting up logging correctly.\n" if $debug;
-                print $_ . "\n" if $debug>2;
-				$bad++;
-				next;
-			};
 
             # we lc everything we pull out of the apache config files so we
             # must also do it here.
             $vhost = lc($vhost);   
 
+            # write it out to the proper vhost file
 			my $main_dom = $domkey_ref->{$vhost};
 
 			if ( $main_dom ) 

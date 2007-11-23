@@ -5,8 +5,9 @@ use warnings;
 package Apache::Logmonster;
 
 use vars qw($VERSION); 
-$VERSION  = '3.02';
+$VERSION  = '3.04';
 
+use lib "inc";
 use lib "lib";
 
 use English;

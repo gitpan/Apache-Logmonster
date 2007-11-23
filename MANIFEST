@@ -22,11 +22,11 @@ inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 inc/Params/Validate.pm
 inc/Params/ValidatePP.pm
+inc/Regexp/Log.pm
 INSTALL
 lib/Apache/Logmonster.pm
 lib/Apache/Logmonster/Perl.pm
 lib/Apache/Logmonster/Utility.pm
-lib/Regexp/Log.pm
 lib/Regexp/Log/Monster.pm
 logmonster.conf
 logmonster.pl
