@@ -91,15 +91,18 @@ DESCRIPTION
 
 INSTALLATION
     Step 1 - Download and install (it's FREE!)
+	from CPAN or
         http://tnpi.net/cart/index.php?crn=210&rn=385&action=show_detail
 
-        Install like nearly every perl module:
+        Install it The Perl Way:
 
            perl Makefile.PL
            make test
            make install 
 
-        To install the config file use "make conf" or "make newconf".
+	To install any missing dependencies, use 'make deps'
+
+        To install the config file, use 'make conf' or 'make newconf'.
         newconf will overwrite any existing config file, so use it only for
         new installs.
 

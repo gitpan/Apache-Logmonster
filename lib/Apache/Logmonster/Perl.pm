@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!perl
 use strict;
 use warnings;
 
 #
-# $Id: Perl.pm 523 2006-10-15 04:33:38Z matt $
+# $Id: Perl.pm,v 1.1 2008/09/29 19:44:35 matt Exp $
 #
 
 package Apache::Logmonster::Perl;

@@ -1,14 +1,24 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Apache-Logmonster
-version:      3.04
-version_from: logmonster.pl
-installdirs:  site
+--- #YAML:1.0
+name:               Apache-Logmonster
+version:            3.05
+abstract:           Apache log utility for merging, sorting, and processing web logs
+author:
+    - Matt Simerson (matt@tnpi.net)
+license:            bsd
+distribution_type:  module
+configure_requires:
+    ExtUtils::MakeMaker:  0
 requires:
-    Compress::Zlib:                2
-    Date::Parse:                   2
-    Params::Validate:              0.8
-    Regexp::Log:                   0.04
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+    Compress::Zlib:    2
+    Date::Parse:       2
+    Mail::Send:        0
+    Params::Validate:  0.8
+    Regexp::Log:       0.04
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.46
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4

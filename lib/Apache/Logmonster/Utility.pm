@@ -1,10 +1,10 @@
-#!/usr/bin/perl
+#!perl
 use strict;
 use warnings;
 #use diagnostics;
 
 #
-# $Id: Utility.pm 588 2007-11-23 04:04:19Z matt $
+# $Id: Utility.pm,v 1.1 2008/09/29 19:44:35 matt Exp $
 #
 
 package Apache::Logmonster::Utility;
@@ -3812,6 +3812,22 @@ Reads in a file, and returns it in an array. All lines in the array are chomped.
  result:
    0 - failure
    success - returns an array with the files contents, one line per array element
+
+
+=item file_mode
+
+ usage:
+   my $mode = $utility->file_mode( file=>'/etc/passwd' );
+
+ required arguments:
+   file - the file path you want to write to
+
+ arguments optional:
+   fatal
+   debug
+
+ result:
+   octal number
 
 
 =item file_write

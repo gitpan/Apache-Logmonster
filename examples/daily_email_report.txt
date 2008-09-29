@@ -29,94 +29,93 @@ consolidate_logfile: fetching...retrieved 61.75 KB
 
 
  ***  this report is saved in /var/log/apache/2006/10/13/HitsPerVhost.txt *** 
-                      14 lines to www.brackmanns.com
+                      14 lines to www.bra****nns.com
                       37 lines to owen.cadillac.net
                       51 lines to mail.simerson.org
-                     284 lines to www.timbersmart.com
-                      13 lines to www.carolesimonwolff.com
-                       9 lines to www.hunterstaging.com
-                     110 lines to timandcarol.com
+                     284 lines to www.ti******art.com
+                      13 lines to www.car****olff.com
+                       9 lines to www.hun******ging.com
+                     110 lines to tim****arol.com
                      197 lines to www.cadillac.net
-                      28 lines to corvette-rubber.com
+                      28 lines to corv******ubber.com
                      158 lines to mail.cadillac.net
-                      95 lines to ehwushu.org
-                       1 lines to city.cadillac.mi.us
-                       1 lines to stjohn-lc.org
-                     757 lines to www.glennwolff.com
-                      32 lines to www.mikezerbe.com
-                      17 lines to www.blockads.com
-                       2 lines to www.lilliewolff.com
-                       6 lines to www.fengshui-etc.com
-                      15 lines to txalamako.org
+                      95 lines to eh***hu.org
+                       1 lines to city.ca****ac.mi.us
+                       1 lines to stj****lc.org
+                     757 lines to www.gl*****lff.com
+                      32 lines to www.mi****rbe.com
+                      17 lines to www.bl***ads.com
+                       2 lines to www.li****wolff.com
+                       6 lines to www.fe******-etc.com
+                      15 lines to tx*****ko.org
                        1 lines to kayla.simerson.net
-                       1 lines to mail.tikismikis.org
-                      16 lines to www.patwolff.com
-                     452 lines to www.corvette-rubber.com
-                       3 lines to www.service-appts.com
-                     825 lines to www.thomasnash.com
-                      11 lines to lakefrontdays.org
+                       1 lines to mail.ti*****kis.org
+                      16 lines to www.pa*****f.com
+                     452 lines to www.corve*****ubber.com
+                       3 lines to www.ser*****appts.com
+                     825 lines to www.th*****ash.com
+                      11 lines to lake*****days.org
                        1 lines to localhost
-                      36 lines to dts-students.org
-                     292 lines to renaissance.cadillac.net
+                      36 lines to dts*****ents.org
+                     292 lines to ren*****nce.cadillac.net
                     1339 lines to matt.cadillac.net
-                    1246 lines to www.northbros.com
-                     698 lines to www.cadillacjaycees.org
+                    1246 lines to www.no*****os.com
+                     698 lines to www.cadi*****aycees.org
                      304 lines to martha.simerson.net
                      569 lines to mail.theartfarm.com
-                    2148 lines to www.horsenetwork.com
+                    2148 lines to www.hor*****work.com
                       20 lines to www.simerson.org
                        4 lines to dns.cadillac.net
                        8 lines to nathan.surls.net
-                     197 lines to www.barkerbrothers.net
+                     197 lines to www.bar*****others.net
                       40 lines to www.bondfilms.com
                      315 lines to www.nictool.com
-                      95 lines to www.neptunequartet.com
+                      95 lines to www.nep*****uartet.com
                       21 lines to www.cadillac.mi.us
-                       2 lines to www.newneighborhoodempire.com
-                       4 lines to www.conversearch.com
-                     199 lines to www.lakeshoretower.com
-                     383 lines to www.neisgroup.com
-                     240 lines to www.persnickityetc.com
+                       2 lines to www.newne*****rh*****pire.com
+                       4 lines to www.conv*****rch.com
+                     199 lines to www.lake*****tower.com
+                     383 lines to www.nei*****p.com
+                     240 lines to www.persn*****yetc.com
                    18563 lines to www.tnpi.biz
-                       3 lines to manage.blockads.com
-                     164 lines to www.pleinairwest.com
+                       3 lines to manage.bl*****s.com
+                     164 lines to www.ple*****west.com
                       34 lines to www.allguitar.com
                       53 lines to dns.tnpi.biz
                       27 lines to www.dts-pneuma.org
-                       4 lines to www.interactiveadvertising.com
+                       4 lines to www.inter*****ead*****sing.com
                       64 lines to www.lynboyer.com
                      160 lines to nictoolserver
                       30 lines to idisk.cadillac.net
                     3156 lines to www.cmaphoto.com
                        1 lines to dalebrinks.com
-                     863 lines to www.frenchquarterwest.com
+                     863 lines to www.fre*****arterwest.com
                       31 lines to carvay.tikismikis.org
                      357 lines to tikismikis.org
-                      86 lines to www.lakeshoreexecutivesuites.com
+                      86 lines to www.lak*********cu*****uites.com
                     2091 lines to www.theartfarm.com
                    12184 lines to matt.simerson.net
                      250 lines to www.mail-toaster.org
                      195 lines to www.surls.net
-                       2 lines to mail.ehwushu.org
-                      23 lines to bsd.tikismikis.org
-                    1258 lines to www.silenthearts.com
-                     144 lines to www.intersportfashions.com
-                       9 lines to new.theartfarm.com
-                      57 lines to www.advancedgraphicimages.com
+                       2 lines to mail.eh*****.org
+                      23 lines to bsd.tik*****is.org
+                    1258 lines to www.sil*****arts.com
+                     144 lines to www.inters**********ns.com
+                      57 lines to www.adv*****gra*****mages.com
                      141 lines to mail.simerson.net
-                      11 lines to www.altadenalincolncrossing.com
-                     293 lines to www.dornplatz.com
+                      11 lines to www.altad*****nc*****ossing.com
+                     293 lines to www.do*****tz.com
 
-Orphans:               9 lines to www.designer-ceramics.com
+Orphans:               9 lines to www.des*****-*****ics.com
 check_stats_dir: using temp dir: /var/log/apache/tmp/doms.
     checking each domains stats dir...
-      /usr/home/txalamako.org/html/stats           ...MISSING. Discarding logs.
-      /usr/home/tikismikis.org/html/webmail/stats  ...MISSING. Discarding logs.
+      /usr/home/txa*****o.org/html/stats           ...MISSING. Discarding logs.
+      /usr/home/tik*****is.org/html/webmail/stats  ...MISSING. Discarding logs.
       /usr/home/blockads.com/admin/stats           ...MISSING. Discarding logs.
       /usr/local/www/nictoolclient/htdocs/stats    ...MISSING. Discarding logs.
      DOCROOT for nictoolserver undeclared!
 sort_vhost_logs: sorting each vhost logfile.............................................................................done
-/usr/local/www/cgi-bin/awstats.pl for www.brackmanns.com   to /usr/home/brackmanns.com/html/stats
+/usr/local/www/cgi-bin/awstats.pl for www.bra*****ns.com   to /usr/home/bra*****ns.com/html/stats
 running awstats!
 Update for config "/etc/awstats/awstats.www.brackmanns.com.conf"
 With data in log file "/var/log/apache/tmp/doms/www.brackmanns.com"...

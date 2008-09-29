@@ -1,11 +1,11 @@
-#!/usr/bin/perl
+#!perl
 use strict;
 use warnings;
 
 package Apache::Logmonster;
 
 use vars qw($VERSION); 
-$VERSION  = '3.04';
+$VERSION  = '3.05';
 
 use lib "inc";
 use lib "lib";

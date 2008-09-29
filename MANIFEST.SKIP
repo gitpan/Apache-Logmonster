@@ -1,4 +1,6 @@
 .svn
 .tar.gz
+.DS_Store
 blib
 trash
+MANIFEST.bak

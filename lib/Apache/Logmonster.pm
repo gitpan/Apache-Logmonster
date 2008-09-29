@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!perl
 use strict;
 use warnings;
 
@@ -19,7 +19,7 @@ use Regexp::Log::Monster;
 
 use vars qw($VERSION $err);
 
-$VERSION  = '3.03';
+$VERSION  = '3.05';
 
 use Apache::Logmonster::Utility; 
 my $utility = Apache::Logmonster::Utility->new();
