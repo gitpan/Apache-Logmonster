@@ -1,13 +1,6 @@
-            The latest version of this document is available at:
-            http://www.tnpi.net/wiki/Logmonster_Changes
-
 Logmonster ChangeLog
-  3.02 and higher
-    3.02+ changes are on the web site.
-
-3.02+ changes are on the web site.
-  http://www.tnpi.net/wiki/Logmonster_Changes
-
+  3.02 +
+http://www.tnpi.net/wiki/Logmonster_Changes
   3.01  - Feb 2, 2007
     Added Params::Validate dependency to Makefile.PL
 
@@ -19,21 +12,29 @@ Logmonster ChangeLog
     Removed an unnecessary dependency on Mail::Toaster in Utility.pm.
 
   3.00rc2 - Oct 14, 2006
-    * updated usage examples
-    * added FAQ
-    * updated META.yml to new format
-    * email report formatting
+    *   updated usage examples
+
+    *   added FAQ
+
+    *   updated META.yml to new format
+
+    *   email report formatting
+
         added OUTPUT_AUTOFLUSH b/c printing to *STDERR flushes immediately
         and mixed print statements did not. Email report is better formatted
         now.
 
-    * added inc/Module/Install
-    * added Build.PL
-    * added examples/daily_email_report.txt
-    * Logmonster.pm
+    *   added inc/Module/Install
+
+    *   added Build.PL
+
+    *   added examples/daily_email_report.txt
+
+    *   Logmonster.pm
+
         debug was not being set properly, report formatting tweaks
 
-    * Utility.pm
+    *   Utility.pm
 
             added _progress sub
 
@@ -72,21 +73,24 @@ Logmonster ChangeLog
     versions.
 
   2.77 - no public release
-    * create daily userlogs
+    *   create daily userlogs
+
         new feature submitted by Gernot Hueber.
 
-    * autogenerate vhost stat dirs
+    *   autogenerate vhost stat dirs
+
         new feature funded by Lewis Bergman: statsdir can be automatically
         created if it does not exist. Set statsdir_policy = create in
         logmonster.conf to enable this feature.
 
-    * incremental awstats config files.
+    *   incremental awstats config files.
+
         New feature by Lewis: Instead of having a full awstats.conf file for
         each vhost, each vhost has its own file that contains only specific
         info for that vhost and includes the generic
         /etc/awstats/awstats.conf file with the "global" settings.
 
-    * added loguser and loggroup to .conf
+    *   added loguser and loggroup to .conf
 
   2.76 - Jun 04, 2005
     statsdir can now be an absolute path

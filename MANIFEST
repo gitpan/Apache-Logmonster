@@ -10,7 +10,6 @@ examples/daily_email_report.txt
 FAQ
 INSTALL
 lib/Apache/Logmonster.pm
-lib/Apache/Logmonster/Perl.pm
 lib/Apache/Logmonster/Utility.pm
 lib/Regexp/Log/Monster.pm
 logmonster.conf
@@ -23,7 +22,6 @@ README
 t/00.load.t
 t/Filehandle.t
 t/Logmonster.t
-t/Perl.t
 t/pod-coverage.t
 t/pod.t
 t/Test-coverage.pl

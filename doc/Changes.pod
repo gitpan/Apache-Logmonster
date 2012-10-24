@@ -14,19 +14,9 @@ Author: Matt Simerson.</p>
 
 =end html
 
-=begin text
-
-	The latest version of this document is available at:
-        http://www.tnpi.net/wiki/Logmonster_Changes
-
-=end text
-
 =head1 Logmonster ChangeLog
 
-
-=head2 3.02 and higher
-
-3.02+ changes are on the web site.
+=head2 3.02 +
 
 =begin html
 
@@ -36,8 +26,7 @@ Author: Matt Simerson.</p>
 
 =begin text
 
-3.02+ changes are on the web site.
-  http://www.tnpi.net/wiki/Logmonster_Changes
+http://www.tnpi.net/wiki/Logmonster_Changes
 
 =end text
 

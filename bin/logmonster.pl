@@ -1,19 +1,16 @@
-#!perl
+#!/usr/bin/perl
+
 use strict;
 use warnings;
 
-package Apache::Logmonster;
+our $VERSION  = '3.07';
 
-use vars qw($VERSION); 
-$VERSION  = '3.05';
+use lib 'lib';
 
-use lib "inc";
-use lib "lib";
-
-use English;
+use English qw( -no_match_vars );
 use Getopt::Long;
 use Pod::Usage;
-use Apache::Logmonster 3;
+use Apache::Logmonster '3.07';
 use Apache::Logmonster::Utility 5; 
 
 my %command_line_options = (
@@ -32,30 +29,29 @@ if ( ! GetOptions (%command_line_options) ) {
 };
 
 # a generic utility object that provides many useful functions
-my $utility = Apache::Logmonster::Utility->new();
+my $lm = Apache::Logmonster->new( $verbose );
+my $utility = $lm->get_util();
 my $banner  = "\n\t\t Apache Log Monster $VERSION by Matt Simerson \n\n";
-my $config  = $utility->parse_config( file =>"logmonster.conf", debug=>0 );
+my $config  = $lm->get_config( 'logmonster.conf' );
 
-# allow CLI to override clean option in config file
-   $config->{'clean'} = $clean if defined $clean;
-   $config->{'time_offset'} = $bump if defined $bump;
+$config->{'clean'} = $clean if defined $clean; # allow CLI to override file
+$config->{'time_offset'} = $bump if defined $bump;
 
-my $logmonster = Apache::Logmonster->new($config,$verbose);
 
 # if this is not enabled, our report formatting will be jumbled
 $OUTPUT_AUTOFLUSH++;
 
 if ( $verbose && ! $report_mode ) {
-  $verbose == 1 ? print "verbose mode (1).\n"
-: $verbose == 2 ? print "very verbose mode (2).\n"
-: $verbose == 3 ? print "screaming at you (3).\n"
-: warn "unknown verbosity\n";
+  print $verbose == 1 ? "verbose mode (1).\n"
+      : $verbose == 2 ? "very verbose mode (2).\n"
+      : $verbose == 3 ? "screaming at you (3).\n"
+      : "unknown verbosity\n";
 };
 
 print $banner if $verbose;
 
-# run a few preliminary sanity tests
-$logmonster->check_config();
+# run sanity tests
+$lm->check_config();
 
 # CLI backwards compatability with previous versions
 $interval ||= $hourly  ? "hour"
@@ -69,54 +65,45 @@ if ( ! defined $valid_intervals{$interval} ) {
     pod2usage;
 };
 
-# stuff a few settings into the $logmonster object so
+# stuff a few settings into the $lm object so
 # Apache::Logmonster functions can access them.
 
 my @hosts = split(/ /, $config->{'hosts'});
 my $host_count = @hosts;
-$logmonster->{'host_count'} = $host_count;
-$logmonster->{'rotation_interval'} = $interval;
-$logmonster->{'dry_run'} = $dry_run || 0;
+$lm->{'host_count'} = $host_count;
+$lm->{'rotation_interval'} = $interval;
+$lm->{'dry_run'} = $dry_run || 0;
 
 if ($report_mode) {
     # prints out the last intervals hit count and exit, useful for SNMP
-    $logmonster->report_hits();
+    $lm->report_hits();
     exit 1;
 };
 
 # open a file to log our activities to
-my $REPORT = $logmonster->report_open("Logmonster", $verbose);
+my $REPORT = $lm->report_open("Logmonster", $verbose);
 
-# store the file handle in the $logmonster object for functions
-$logmonster->{'report'} = $REPORT;
+# store the file handle in the $lm object for functions
+$lm->{'report'} = $REPORT;
 
-$utility->_progress($banner) if $verbose;
+$lm->_progress($banner) if $verbose;
 print $REPORT $banner;
 
 # do the work
-my $domains_ref = 
-$logmonster->get_domains_list     ();
-$logmonster->fetch_log_files      ();
-$logmonster->split_logs_to_vhosts ($domains_ref);
-$logmonster->check_stats_dir      ($domains_ref);
-$logmonster->sort_vhost_logs      () if !$dry_run;
-$logmonster->feed_the_machine     ($domains_ref);
-$logmonster->report_close         ($REPORT);
+$lm->fetch_log_files();
+my $domains_ref = $lm->split_logs_to_vhosts();
+$lm->sort_vhost_logs      () if !$dry_run;
+$lm->feed_the_machine     ($domains_ref);
+$lm->report_close         ($REPORT);
 
-exit 1;   # happy exit status
+exit 1;
 
 __END__
 
 
 =head1 NAME
 
-Apache::Logmonster - log utility for merging, sorting, and processing web logs
-
-
-=head1 VERSION
- 
-This documentation refers to Apache::Logmonster version 3.00
- 
+Logmonster - log utility for merging, sorting, and processing web logs
 
 =head1 SYNOPSIS
 
@@ -153,53 +140,45 @@ From cron with a report of activity:
 
 =head1 DESCRIPTION
 
-Logmonster is a tool to collect log files from one or many Apache web servers, split them based on the virtual host they were served for, sort the logs into cronological order, and finally pipe the sorted logs to the log file analyzer of choice (webalizer, http-analyze, AWstats, etc).
+Logmonster is a tool to collect log files from one or many web servers, split them based on the virtual host they were served for, sort the logs into cronological order, and pipe the sorted logs to a log file analyzer. Webalizer, http-analyze, and AWstats are currently supported.
 
 
 =head2 MOTIVATION
 
-Log collection: I have a number of web sites that are mirrored on two or three web servers. The statistics I care about are agreggate. I want to know how much traffic a web site is getting across all the servers. To accomplish that, the logs must be collected from each server. 
+Log collection: I have several web sites that are mirrored. I only care agreggate statistics. To accomplish that, the logs must be collected from each server. 
 
-Sorting: Since most log processors require the log file entries to be in chronological order, simply concatenating them, or feeding them one after another does not work. Logmonster takes care of this by sorting all the log entries for each vhost into chronological order.
+Sorting: Since most log processors require the log file entries to be in chronological order, simply concatenating them, or feeding them one after another does not work. Logmonster sorts all the log entries for each vhost into chronological order.
 
-Processor Agnostic: If I want to switch from one log processor to another, it should be simple and painless. Logmonster takes care of all the dirty work to make the possible. Each domain can even have its own processor.
+Agnostic: If I want to switch to another log processor, it is simple and painless. Each domain can have a preferred processor.
 
 
 =head2 FEATURES
 
 =over
 
-=item * Log Retrieval from one or mnay hosts
+=item * Log Retrieval from one or many hosts
 
 =item * Ouputs to webalizer, http-analyze, and AWstats.
 
-=item * Automatic vhost configuration 
+=item * Automatic vhost detection 
 
-Logmonster reads your Apache config files to learn about your virtual hosts and their file system location. Logmonster also generates config files as required (ie, awstats.example.com.conf).
-
-=item * Settings configuration for each virtualhost
-
-Outputs stats into each virtual domains stats dir, if that directory exists. This is an easy way to enable or disable stats for a virtual host. If "stats" exists, it will be updated. Otherwise it will not. Can also creates missing stats directories if desired (see statsdir_policy in logmonster.conf).
+Logmonster generates config files as required (ie, awstats.example.com.conf).
 
 =item * Efficient
 
-uses Compress::Zlib to read directly from .gz files to minimizes network and disk usage. Skips processing logs for vhosts with no $statsdir. Skips sorting if you only have logs from one host.
+Reads directly from compressed log files to minimize network and disk usage. Skips sorting if you only have logs from a single host.
 
 =item * Flexible update intervals
 
-you can run it monthly, daily, or hourly
+runs monthly, daily, or hourly
 
 =item * Reporting
 
-saves an activity report and sends an email friendly report.
+logs an activity report and sends an email friendly report.
 
 =item * Reliable
 
-lots of error checking so if something goes wrong, it gives a useful error message.
-
-=item * Apache savvy
-
-Understands and correctly deals with server aliases
+When something goes wrong, it provides useful error messages.
 
 =back
 
@@ -210,27 +189,39 @@ Understands and correctly deals with server aliases
 
 =item Step 1 - Download and install (it's FREE!)
 
-http://tnpi.net/cart/index.php?crn=210&rn=385&action=show_detail
+https://www.tnpi.net/cart/index.php?crn=210&rn=385&action=show_detail
 
-Install like nearly every perl module: 
+Install like typical perl modules:
 
    perl Makefile.PL
    make test
    make install 
 
-To install the config file use "make conf" or "make newconf". newconf will overwrite any existing config file, so use it only for new installs.
+To install the config file, 'make conf' or 'make newconf'. The newconf target will overwrite any existing config file.
 
 =item Step 2 - Edit logmonster.conf
 
  vi /usr/local/etc/logmonster.conf
 
-=item Step 3 - Edit httpd.conf
+=item Step 3 - Edit your web servers config
+
+=over 4 
+
+=item Apache
 
 Adjust the CustomLog and ErrorLog definitions. We make two changes, appending %v (the vhost name) to the CustomLog and adding cronolog to automatically rotate the log files.
 
   LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v" combined
   CustomLog "| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/access.log" combined
   ErrorLog "| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/error.log"
+
+=item Lighttpd
+
+ accesslog.format = "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v"
+ accesslog.filename = "|/usr/local/sbin/cronolog /var/log/http/%Y/%m/%d/access.log"
+ server.errorlog  = "/var/log/http/error.log"
+
+=back
 
 =item Step 4 - Test manually, then add to cron.
 
@@ -243,14 +234,14 @@ L<http://tnpi.net/wiki/Logmonster_FAQ>
 
 =item Step  6 - Enjoy
 
-Allow Logmonster to make your life easier by handling your log processing. Enjoy the daily summary emails, and then express your gratitude by making a small donation to support future development efforts.
+Enjoy the daily summary emails.
 
 =back
 
 
 =head1 DIAGNOSTICS
 
-Run in verbose mode (-v) to see addition status and error messages. If you want more verbosity, you can increase the verbosity by appending another -v (-v -v). If that is not enough, run with (-v -v -v) for even more verbosity. If that is not enough is, the source with you be. "Fear is the path to the dark side. Fear leads to anger. Anger leads to hate. Hate leads to suffering." Fear not, for the source is strong with you.
+Run in verbose mode (-v) to see additional status and error messages. Verbosity can be increased by appending another -v, or even (-v -v -v) maximal verbosity. If that is not enough, the source is with you.
 
 Also helpful when troubleshooting is the ability to skip cleanup (so logfiles do not have to be fetched anew) with the --noclean command line option.
 
@@ -274,12 +265,12 @@ Builtins
 
 =head1 BUGS AND LIMITATIONS
 
-None known. Report problems to author. Patches are welcome.
+Report problems to author. Patches welcome.
 
 
 =head1 AUTHOR
  
-Matt Simerson  (matt@tnpi.net)
+Matt Simerson  (msimerson@cpan.org)
  
 
 =head1 ACKNOWLEDGEMENTS
@@ -294,9 +285,9 @@ Matt Simerson  (matt@tnpi.net)
 
 Add support for analog.
 
-Add support for individual webalizer.conf file for each domain (this will likely not happen until someone submits a diff or pays me to do it as I don't use webalizer any longer).
+Add support for individual webalizer.conf file for each domain (this will likely not happen until someone submits a diff. I don't use webalizer any more).
 
-Delete log files older than X days/month - super low priority, it's easy and low maintenance to manually delete a few months log files when I'm sure I don't need them any longer.
+Delete log files older than X days/months - low priority, it's easy and low maintenance to manually delete a few months log files when I'm sure I don't need them any longer.
 
 Do something with error logs (other than just compress)
 
@@ -312,7 +303,7 @@ http://tnpi.net/wiki/Logmonster
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2003-2007, The Network People, Inc. (info@tnpi.net) All rights reserved.
+Copyright (c) 2003-2012, The Network People, Inc. (info@tnpi.net) All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 

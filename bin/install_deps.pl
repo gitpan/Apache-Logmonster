@@ -11,7 +11,7 @@ my %required_modules = (
     'Date::Format'    => { cat => 'devel',     port => 'p5-TimeDate'        },
     'Params::Validate'=> { cat => 'devel',     port => 'p5-Params-Validate' },
     'Regexp::Log'     => { cat => 'textproc',  port => 'p5-Regexp-Log'      },
-    'Mail::Send'      => { cat => 'mail',      port => ''      },
+    'Mail::Send'      => { cat => 'mail',      port => 'p5-Mail-Tools'      },
 );
 
 my $sudo = $EFFECTIVE_USER_ID == 0 ? '' : 'sudo';

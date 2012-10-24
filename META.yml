@@ -1,12 +1,14 @@
 --- #YAML:1.0
 name:               Apache-Logmonster
-version:            3.05
+version:            3.07
 abstract:           Apache log utility for merging, sorting, and processing web logs
 author:
     - Matt Simerson (matt@tnpi.net)
 license:            bsd
 distribution_type:  module
 configure_requires:
+    ExtUtils::MakeMaker:  0
+build_requires:
     ExtUtils::MakeMaker:  0
 requires:
     Compress::Zlib:    2
@@ -18,7 +20,7 @@ no_index:
     directory:
         - t
         - inc
-generated_by:       ExtUtils::MakeMaker version 6.46
+generated_by:       ExtUtils::MakeMaker version 6.56
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4

@@ -1,7 +1,7 @@
 
 =begin html
 
-<p>Apache::Logmonster - Log Processing Utility<br>
+<p>Logmonster - Log Processing Utility<br>
 Author: Matt Simerson.</p>
 
  <p>[ 
@@ -20,9 +20,9 @@ Author: Matt Simerson.</p>
 
 =head2 Why did you write Logmonster?
 
-Typical Scenario: You have a web server that serves your domain. You write a simple script to restart apache each night and pipe the logs off to your analyzer. It works just fine.  
+Typical Scenario: A web server serves a domain. We write a simple script to restart apache each night and pipe the logs off to our analyzer. Or use newsyslog to do the same. It works fine. 
 
-ISP/Hosting Scenario: Each server hosts many domains. You may also have load balanced servers (multiple machines) serving each domain. A tool like this is necessary to:
+ISP/Hosting Scenario: Each server hosts many domains. We may have load balanced servers (multiple machines) serving each domain. A tool like logmonster is necessary to:
 
 =over
 
@@ -44,7 +44,7 @@ Read the Apache docs (L<http://httpd.apache.org/docs/2.0/logs.html>) and all the
 
 =head2 Why not use one file per vhost so you don't have to split them?
 
-I tried that. One problem is that you end up with lots of open file descriptors (one per vhost). That only scales so far before you decide it is not a good idea. You still must collect the files from multiple servers and sort them before feeding them into your log processor. You might as well just start by having them all in one place.
+I tried that. I ended up with lots of open file descriptors (one per vhost). That doesn't scale well. One must still collect the files from multiple servers and sort them. Why not begin with them  all in one place?
 
 =head2 What is the recommended way to implement logmonster?
 
@@ -59,12 +59,6 @@ I tried that. One problem is that you end up with lots of open file descriptors 
 =back
 
 It will tell you what it is doing and everything should look reasonable. Correct anything you do not like (creating $statsdir for domains that should have it, etc) and then create a cron entry running "logmonster.pl -d" anytime after midnight. Read the output from logmonster in your mailbox for the next week. When you're confident everything is great, adjust crontab and add a "-q" to it so it stops emailing you (unless there's errors).
-
-=head2 How do I enable log processing for a virtual domain?
-
-Create the directory ("stats" by default) within the vhost's DocumentRoot. 
-
-For example, the docroot for example.com is /home/example.com/html. To enable virtual host processing, create the directory /home/example.com/html/stats. Their statistics will be processed.
 
 
 =head2 How do I process my logs hourly?
@@ -123,49 +117,13 @@ Most systems have all but Compress::Zlib installed
 
 =back
 
-=item 4. Your logs are set up properly. See "Apache Logs"
+=item 4. Your logs are set up properly. See "INSTALL"
 
-=item 5. The time on your web servers is syncronized (think NTP)
+=item 5. The time on your web servers is synchronized (think NTP)
 
 =item 6. You use webalizer, http-analyze, or AWstats for log processing
 
 =back
-
-=head2 What should I set vhost to?
-
-vhost should be either a file with all your directives listed (ie, httpd.conf) or a directory (my favorite way) that contains files, each containing the VirtualHost and related directives for that Apache vhost. This is from the configuration file:
-
-  ##
-  # vhost -  This is where Logmonster learns about your Apache vhosts. If
-  #          you list them in your httpd.conf, then this should be set to
-  #          the full path of your httpd.conf file. 
-  #
-  #              vhost = /usr/local/etc/apache/httpd.conf
-  #
-  #          If you use a include directory for your vhosts, then this
-  #          should be the full path to that directory.
-  #
-  #              vhost = /usr/local/etc/apache/vhosts
-  #
-  #vhost     = /etc/httpd/vhosts               # darwin
-  #vhost     = /var/www/vhosts                 # linux
-  #vhost     = /usr/local/etc/apache2/Includes  # freebsd
-  #
-  vhost     = /usr/local/etc/apache/Includes
-
-=head2 Can I use this with web servers other than Apache?
-
-Absolutely. Set up a configuration file with your vhost information in it and point logmonster at it. The format for each vhost is as follows:
-
-    <VirtualHost>
-      ServerName www.tnpi.net
-      ServerAlias www.thenetworkpeople.net *.tnpi.net
-      DocumentRoot /home/tnpi.net/html
-    </VirtualHost>
-
-Create as many vhost directives as you need and logmonster will parse them all. When you make changes to your web server, update this file as well.
-
-All the other rules apply equally. You will want to use Apache's ELF (Extended Log Format) with the virtual hostname appended to the logs and pipe the logs to cronolog for reasons mentioned elsewhere.
 
 =head2 Cronolog and selinux are not playing nicely
 
@@ -188,19 +146,19 @@ Lewis Bergman
 
 =head2 How do my logs need to be set up?
 
-The default version of Apache's ELF format is quite good. However, on a system with many virtual hosts, determing which vhost a particular entry is for can be quite difficult. I wrote a parser that was about 98% effective. However, there is a better way.
+The default version of Apache's ELF format is quite good. However, on a system with many virtual hosts, determing which vhost a particular entry is for can be difficult. I wrote a parser that was about 98% effective. However, there is a better way.
 
 
-Apache supports the addition of a %v option in the LogFormat declaration. Using it appends the virtualhost that the hit was served for. This is 100% effective and makes it quite easy to detemine which vhost a log entry was served for. So, we recommend using a slightly modified version of Apache's Extended Log Format.
+Web servers support the addition of a %v option in the LogFormat declaration. It appends the virtualhost that the hit was served for. This is 100% effective and a bulletproof way to detemine which vhost a log entry was served for. We recommend a slightly modified version of Apache's Extended Log Format.
 
 
   LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v" combined
   CustomLog "| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/access.log" combined
   ErrorLog "| /usr/local/sbin/cronolog /var/log/apache/%Y/%m/%d/error.log"
 
-The LogFormat line is identical to its heir in the httpd.conf-default file except for the %v at the end. That little %v tells Apache to write the canonical servername (vhost) into the logfile.
+The LogFormat line is identical to its heir in except for the %v at the end. That little %v tells Apache to append the canonical servername (vhost) to each log entry.
 
-The CustomLog line is pretty easy too. We pipe our logs to cronolog and it is set to store each days logs into an appropriately named directory. In this example, todays logs are stored on /var/log/apache/2006/10/01/access.log. That makes it very easy to grab an interval worth of logs to process.
+The CustomLog line pipes our logs to cronolog, which is set to store each days logs in a date named directory. In this example, todays logs are stored on /var/log/apache/2006/10/01/access.log. This makes it very easy to grab an interval worth of logs to process.
 
 =cut
 

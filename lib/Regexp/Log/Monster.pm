@@ -1,10 +1,12 @@
 package Regexp::Log::Monster;
 
 use strict;
-use base qw( Regexp::Log );
-use vars qw( $VERSION %DEFAULT %FORMAT %REGEXP );
+use warnings;
 
-$VERSION = 0.04;
+use base qw( Regexp::Log );
+use vars qw( %DEFAULT %FORMAT %REGEXP );
+
+our $VERSION = 0.04;
 
 =head1 NAME
 
