@@ -2,12 +2,12 @@ use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-use lib "lib";
+use lib 'lib';
 
 sub MY::postamble 
 {
 
-'LOGMONSTER = /Users/Shared/Sites/www.tnpi.biz/internet/www/logmonster
+'LOGMONSTER = /Users/Shared/Sites/www.tnpi.net/internet/www/logmonster
 
 docs:
 	pod2text bin/logmonster.pl         > README
@@ -55,8 +55,9 @@ WriteMakefile(
                             'Date::Parse'      => 2,
                             'Regexp::Log'      => .04,
                             'Mail::Send'       => 0,
+                            'URI'              => 1,
                         },
-	'AUTHOR'         => 'Matt Simerson (matt@tnpi.net)',
+	'AUTHOR'         => 'Matt Simerson (msimerson@cpan.org)',
 	'ABSTRACT'       => 'Apache log utility for merging, sorting, and processing web logs',
 	'LICENSE'	 => 'bsd',
 	clean            => {

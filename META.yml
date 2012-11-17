@@ -1,9 +1,9 @@
 --- #YAML:1.0
 name:               Apache-Logmonster
-version:            3.07
+version:            3.08
 abstract:           Apache log utility for merging, sorting, and processing web logs
 author:
-    - Matt Simerson (matt@tnpi.net)
+    - Matt Simerson (msimerson@cpan.org)
 license:            bsd
 distribution_type:  module
 configure_requires:
@@ -16,6 +16,7 @@ requires:
     Mail::Send:        0
     Params::Validate:  0.8
     Regexp::Log:       0.04
+    URI:               1
 no_index:
     directory:
         - t
