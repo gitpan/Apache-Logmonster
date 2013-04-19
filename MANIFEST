@@ -27,3 +27,4 @@ t/pod.t
 t/Test-coverage.pl
 t/Utility.t
 TODO
+META.json                                Module JSON meta-data (added by MakeMaker)

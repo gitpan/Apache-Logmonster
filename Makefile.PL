@@ -46,17 +46,22 @@ deps:
 
 WriteMakefile(
 	'NAME'	        => 'Apache::Logmonster',
-	'VERSION_FROM'  => 'bin/logmonster.pl',
+	'VERSION_FROM'  => 'lib/Apache/Logmonster.pm',
 	'EXE_FILES'     => [ 'bin/logmonster.pl' ],
 	'INSTALLSCRIPT' => '/usr/local/sbin',
+    'MIN_PERL_VERSION' => 5.008001,
 	'PREREQ_PM'     => {
-                            'Params::Validate' => .8,
-                            'Compress::Zlib'   => 2, 
-                            'Date::Parse'      => 2,
-                            'Regexp::Log'      => .04,
-                            'Mail::Send'       => 0,
-                            'URI'              => 1,
-                        },
+                          'Params::Validate' => .8,
+                          'Compress::Zlib'   => 2, 
+                          'Date::Parse'      => 2,
+                          'Regexp::Log'      => .04,
+                          'Mail::Send'       => 0,
+                          'URI'              => 1,
+                       },
+    'TEST_REQUIRES' => {
+                          'libwww-perl'        => 1,
+                          'Proc::ProcessTable' => 1, # Utility::is_process_running
+                       },
 	'AUTHOR'         => 'Matt Simerson (msimerson@cpan.org)',
 	'ABSTRACT'       => 'Apache log utility for merging, sorting, and processing web logs',
 	'LICENSE'	 => 'bsd',
