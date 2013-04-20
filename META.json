@@ -22,8 +22,8 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : "0",
-            "Proc::ProcessTable" : "1"
+            "Test::Pod" : "0",
+            "Test::Pod::Coverage" : "0"
          }
       },
       "configure" : {
@@ -37,6 +37,7 @@
             "Date::Parse" : "2",
             "Mail::Send" : "0",
             "Params::Validate" : "0.8",
+            "Proc::ProcessTable" : "1",
             "Regexp::Log" : "0.04",
             "URI" : "1",
             "perl" : "5.008001"
@@ -44,5 +45,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "3.09"
+   "version" : "3.10"
 }

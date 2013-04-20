@@ -13,10 +13,6 @@ docs:
 	pod2text bin/logmonster.pl         > README
 	pod2text doc/FAQ.pod               > FAQ
 	pod2text doc/Changes.pod           > Changes
-	pod2html --noindex bin/logmonster.pl   > doc/README.html
-	pod2html doc/FAQ.pod               > doc/FAQ.html
-	pod2html --noindex doc/Changes.pod > doc/Changes.html
-	rm pod2htm*
  
 web:
 	install -m 0644 bin/logmonster.pl $(LOGMONSTER)/logmonster.pl
@@ -45,31 +41,36 @@ deps:
 };
 
 WriteMakefile(
-	'NAME'	        => 'Apache::Logmonster',
-	'VERSION_FROM'  => 'lib/Apache/Logmonster.pm',
-	'EXE_FILES'     => [ 'bin/logmonster.pl' ],
-	'INSTALLSCRIPT' => '/usr/local/sbin',
+	'NAME'	           => 'Apache::Logmonster',
+	'AUTHOR'           => 'Matt Simerson (msimerson@cpan.org)',
+	'ABSTRACT'         => 'Apache log utility for merging, sorting, and processing web logs',
+	'EXE_FILES'        => [ 'bin/logmonster.pl' ],
+	'INSTALLSCRIPT'    => '/usr/local/sbin',
+	'LICENSE'	       => 'bsd',
     'MIN_PERL_VERSION' => 5.008001,
-	'PREREQ_PM'     => {
-                          'Params::Validate' => .8,
-                          'Compress::Zlib'   => 2, 
-                          'Date::Parse'      => 2,
-                          'Regexp::Log'      => .04,
-                          'Mail::Send'       => 0,
-                          'URI'              => 1,
-                       },
-    'TEST_REQUIRES' => {
-                          'libwww-perl'        => 1,
-                          'Proc::ProcessTable' => 1, # Utility::is_process_running
-                       },
-	'AUTHOR'         => 'Matt Simerson (msimerson@cpan.org)',
-	'ABSTRACT'       => 'Apache log utility for merging, sorting, and processing web logs',
-	'LICENSE'	 => 'bsd',
-	clean            => {
+	'VERSION_FROM'     => 'lib/Apache/Logmonster.pm',
+	'PREREQ_PM'        => {
+                            'Params::Validate'   => .8,
+                            'Compress::Zlib'     => 2, 
+                            'Date::Parse'        => 2,
+                            'Regexp::Log'        => .04,
+                            'Mail::Send'         => 0,
+                            'URI'                => 1,
+                            'Proc::ProcessTable' => 1, # Utility::is_process_running
+                            'libwww-perl'        => 1,
+                          },
+    'TEST_REQUIRES'    => {
+                          'Test::Pod'          => 0,
+                          'Test::Pod::Coverage'=> 0,
+                          },
+    'BUILD_REQUIRES'   => {
+                          'Test::Pod'          => 0,
+                          'Test::Pod::Coverage'=> 0,
+                          },
+	 clean             => {
                             FILES => [  "t/trash",
-                                        "pod2htm*",
                                         "t/tmp_*",
-                                    ],
-                        },
+                                     ],
+                          },
 );
 

@@ -1,11 +1,8 @@
 bin/install_deps.pl
 bin/logmonster.pl
 Changes
-doc/Changes.html
 doc/Changes.pod
-doc/FAQ.html
 doc/FAQ.pod
-doc/README.html
 examples/daily_email_report.txt
 FAQ
 INSTALL
@@ -13,7 +10,6 @@ lib/Apache/Logmonster.pm
 lib/Apache/Logmonster/Utility.pm
 lib/Regexp/Log/Monster.pm
 logmonster.conf
-logmonster.tmproj
 Makefile.PL
 MANIFEST
 MANIFEST.SKIP

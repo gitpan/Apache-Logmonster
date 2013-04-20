@@ -3,7 +3,7 @@ package Apache::Logmonster;
 use strict;
 use warnings;
 
-our $VERSION = '3.09';
+our $VERSION = '3.10';
 
 use Carp;
 use Compress::Zlib;
@@ -34,7 +34,7 @@ sub new {
     $self->get_util();
 
     return $self;
-}
+};
 
 sub check_awstats_file {
     my $self = shift;
@@ -59,7 +59,7 @@ EO_AWSTATS_VHOST
         ],
         debug => 0,
     ); 
-}
+};
 
 sub check_config {
     my $self  = shift;
@@ -132,7 +132,7 @@ sub check_config {
     $self->_progress_end('passed') if $debug == 1;
 
     return 1;
-}
+};
 
 sub compress_log_file {
     my $self    = shift;
@@ -220,7 +220,7 @@ sub compress_log_file {
         : $self->_progress_end();
 
     return 1;
-}
+};
 
 sub consolidate_logfile {
 
@@ -288,7 +288,7 @@ sub consolidate_logfile {
     print $REPORT "\t $err\n";
 
     return 1;
-}
+};
 
 sub feed_the_machine {
     my $self        = shift;
@@ -386,7 +386,7 @@ sub feed_the_machine {
         print "\nDon't forget about $file\n";
         print $REPORT "\nDon't forget about $file\n";
     }
-}
+};
 
 sub fetch_log_files {
 
@@ -433,7 +433,7 @@ WEBHOST:
     }
 
     return 1;
-}
+};
 
 sub get_log_dir {
 
@@ -478,7 +478,7 @@ sub get_log_dir {
 
     print "get_log_dir: using $logdir\n" if $debug > 1;
     return $logdir;
-}
+};
 
 sub get_log_files {
     my $self = shift;
@@ -566,7 +566,7 @@ sub report_hits {
 
     print "report_hits: no entries found!\n" if $debug;
     return;
-}
+};
 
 sub report_close {
     my $self = shift;
@@ -579,7 +579,7 @@ sub report_close {
 
     carp "report_close: was not passed a valid filehandle!";
     return;
-}
+};
 
 sub report_open {
     my $self  = shift;
@@ -605,7 +605,7 @@ sub report_open {
 
     print "\n ***  this report is saved in $report_file *** \n" if $debug;
     return $REPORT;
-}
+};
 
 sub sort_vhost_logs {
 
@@ -739,7 +739,7 @@ VHOST_FILE:
     $self->_progress_end() if $debug == 1;
 
     return 1;
-}
+};
 
 sub split_logs_to_vhosts {
     my $self = shift;
@@ -832,7 +832,7 @@ sub split_logs_to_vhosts {
     $self->report_bad_hits( $bad );
 
     return \%fhs;
-}
+};
 
 sub spam_check {
     my ($self, $data, $count) = @_;
@@ -1148,7 +1148,7 @@ If files to process are larger than 10MB, find a nicer way to sort them rather t
 http://www.tnpi.net/internet/www/logmonster
 
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright (c) 2003-2013, The Network People, Inc. All rights reserved.
 
