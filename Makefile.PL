@@ -56,8 +56,7 @@ WriteMakefile(
                             'Regexp::Log'        => .04,
                             'Mail::Send'         => 0,
                             'URI'                => 1,
-                            'Proc::ProcessTable' => 1, # Utility::is_process_running
-                            'libwww-perl'        => 1,
+                            'LWP'                => 0,
                           },
     'TEST_REQUIRES'    => {
                           'Test::Pod'          => 0,

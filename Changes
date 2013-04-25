@@ -1,6 +1,59 @@
 Logmonster ChangeLog
-  3.02 +
-http://www.tnpi.net/wiki/Logmonster_Changes
+
+3.11 - Apr 2013
+    testing & packing changes
+
+3.09 - Apr 2013
+    packaging changes
+
+3.08 - Dec 2012
+    added missing URL dependency
+    updated bin/install_deps.pl
+
+3.07 - Oct 2012
+    removed Perl.pm
+    updated Utility.pm to v 5.35
+    stripped out apache httpd.conf parsing. Instead, detect vhosts from the log files (works with any http server)
+    added confdir (path to processor config files)
+    statsdir is now a full path to a directory
+    the 'drop logs into vhost docroot" feature is gone, pending a clever way to reliably deduce the vhost document root for various web servers.
+    removed vhost config option
+    added default_vhost option
+    moved _progress subs into Logmonster.pm
+    removed get_domains_list, check_stats_dir, get_domains_list_from_directories, get_vhosts_from_file, install_default_awstats_conf, turn_domains_into_sort_key
+    abstracted new subs: get_log_files, spam_check, open_vhost_handle, report_matches, report_spam_hits, report_bad_hits,
+    added lighttpd config entries to instructions
+
+3.05 - Sep 2008
+
+    removed inc/* from distribution
+    updated Makefile.PL, adding LICENSE and missing dependencies
+    moved logmonster.pl into bin dir
+    replaced bin/install_freebsd_deps.sh with install_deps.pl
+    added 'make deps' target to Makefile.PL
+
+3.04 - Nov 2007
+
+    included "inc"' in modules
+    Utility.pm - only attempt to use sudo as a last resort
+    Utility.pm & Utility.t- synced with Mail::Toaster
+    moved Regexp::Log to inc dir
+
+3.03 - Feb 17, 2007
+
+    Utility.pm - only attempt to use sudo as a last resort
+    bin/install_freebsd_deps.sh - install Regexp::Log port
+
+3.02 - Feb 16, 2007
+
+    added support for detecting dynamic mass virtual hosting
+    evaluate log for referrer spam and discard the referral spam.
+    optional referral spam reporting
+    the hits-per-vhost was only counting the number of hits for the master domain. Domain alias hits weren't showing up in the hits-per-vhost report.
+    added bin/install_freeebsd_deps.sh installer
+    default log location is now /var/log/http (was /var/log/apache)
+    added Regexp::Log::Logmonster - uses a compiled regexp to parse log entries (very useful for evaluate for referrer spam).
+
   3.01  - Feb 2, 2007
     Added Params::Validate dependency to Makefile.PL
 

@@ -1846,20 +1846,6 @@ sub is_interactive {
 sub is_process_running {
     my ( $self, $process ) = @_;
 
-## no critic ( ProhibitStringyEval )
-    eval "require Proc::ProcessTable";
-## use critic
-    if ( ! $EVAL_ERROR ) {
-        my $i = 0;
-        my $t = Proc::ProcessTable->new();
-        if ( scalar @{ $t->table } ) {
-            foreach my $p ( @{ $t->table } ) {
-                $i++ if ( $p->cmndline =~ m/$process/i );
-            };
-            return $i;
-        };
-    };
-
     my $ps   = $self->find_bin( 'ps', debug => 0 );
 
     if    ( lc($OSNAME) =~ /solaris/i ) { $ps .= ' -ef';  }

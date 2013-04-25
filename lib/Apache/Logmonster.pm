@@ -3,7 +3,7 @@ package Apache::Logmonster;
 use strict;
 use warnings;
 
-our $VERSION = '3.10';
+our $VERSION = '3.11';
 
 use Carp;
 use Compress::Zlib;
