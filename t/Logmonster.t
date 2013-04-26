@@ -5,17 +5,17 @@ use warnings;
 use Cwd;
 use Data::Dumper;
 use English qw( -no_match_vars );
-use Test::More 'no_plan';
+use Test::More;
+
+if ( $OSNAME =~ /cygwin|win32|windows/i ) {
+    plan skip_all => "no windows support";
+};
 
 use lib 'lib';
 use lib 'inc';
 
-BEGIN { 
-    use_ok( 'Apache::Logmonster' );
-    use_ok( 'Apache::Logmonster::Utility' );
-}
-require_ok( 'Apache::Logmonster' );
-require_ok( 'Apache::Logmonster::Utility' );
+use_ok( 'Apache::Logmonster' );
+use_ok( 'Apache::Logmonster::Utility' );
 
 # let the testing begin
 
@@ -126,3 +126,4 @@ my $log_fh;
 ## report_close
     ok( $logmonster->report_close($log_fh, 0), 'report_close');
 
+done_testing();

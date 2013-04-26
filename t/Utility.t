@@ -17,12 +17,8 @@ my $network    = 0;    # run tests that require network
 $network = 1 if $OSNAME =~ /freebsd|darwin/;
 my $r;
 
-BEGIN {
-    use_ok('Apache::Logmonster');
-    use_ok('Apache::Logmonster::Utility');
-}
-require_ok('Apache::Logmonster');
-require_ok('Apache::Logmonster::Utility');
+use_ok('Apache::Logmonster');
+use_ok('Apache::Logmonster::Utility');
 
 # let the testing begin
 my $monster = Apache::Logmonster->new();
