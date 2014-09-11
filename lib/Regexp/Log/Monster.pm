@@ -3,10 +3,10 @@ package Regexp::Log::Monster;
 use strict;
 use warnings;
 
-use base qw( Regexp::Log );
+use base 'Regexp::Log';
 use vars qw( %DEFAULT %FORMAT %REGEXP );
 
-our $VERSION = 0.05;
+our $VERSION = 5.36;
 
 =head1 NAME
 

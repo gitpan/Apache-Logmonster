@@ -1,5 +1,8 @@
 Logmonster ChangeLog
 
+5.36 - Sep 2014
+    version bump, for consistent version numbers in all packages
+
 3.12 - Apr 2013
     testing changes, to resolve test errors on Windows
 

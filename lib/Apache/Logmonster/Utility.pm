@@ -4,7 +4,7 @@ package Apache::Logmonster::Utility;
 use strict;
 use warnings;
 
-our $VERSION = '5.35';
+our $VERSION = '5.36';
 
 use Cwd;
 use Carp;

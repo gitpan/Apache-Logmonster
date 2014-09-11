@@ -3,7 +3,7 @@ package Apache::Logmonster;
 use strict;
 use warnings;
 
-our $VERSION = '3.12';
+our $VERSION = '5.36';
 
 use Carp;
 use Compress::Zlib;
@@ -484,7 +484,7 @@ sub get_log_files {
     my $self = shift;
     my $dir = shift or die "missing dir argument";
 
-    my @logs = <$dir/*.gz>;
+    my @logs = glob("$dir/*.gz");
 
     my $debug  = $self->{debug};
     my $REPORT = $self->{report};
@@ -639,6 +639,7 @@ sub sort_vhost_logs {
         if $debug == 1;
 
     my $lines = 0;
+    my ($SORTED, $UNSORTED);
 
 VHOST_FILE:
     foreach
@@ -654,14 +655,14 @@ VHOST_FILE:
                 "sort_vhost_logs: logfile $file is greater than 10MB\n";
         }
 
-        unless ( open UNSORTED, "<", $file ) {
+        unless ( open $UNSORTED, '<', $file ) {
             warn
                 "\nsort_vhost_logs: WARN: could not open input file $file: $!";
             next VHOST_FILE;
         }
 
         # make sure we can write out the results before doing all the work
-        unless ( open SORTED, ">", "$file.sorted" ) {
+        unless ( open $SORTED, ">", "$file.sorted" ) {
             print
                 "\n sort_vhost_logs: FAILED: could not open output file $file: $!\n"
                 if $debug;
@@ -670,7 +671,7 @@ VHOST_FILE:
 
         $self->_progress_begin("    sorting $file...") if $debug > 1;
 
-        while (<UNSORTED>) {
+        while (<$UNSORTED>) {
             $self->_progress_continue() if $debug > 1;
             chomp;
 ###
@@ -710,7 +711,7 @@ VHOST_FILE:
 
             $lines++;
         }
-        close(UNSORTED)
+        close($UNSORTED)
             || croak "sort_vhost_logs: Gack, could not close $file: $!\n";
         $self->_progress_end() if $debug > 1;
 
@@ -725,9 +726,9 @@ VHOST_FILE:
         foreach (@sorted) {
 
 # iterate through @sorted, adding the corresponding lines from %beastie to the file
-            print SORTED "$beastie{$_}\n";
+            print $SORTED "$beastie{$_}\n";
         }
-        close SORTED;
+        close $SORTED;
 
         move( "$file.sorted", $file )
             or carp
@@ -945,7 +946,8 @@ sub report_matches {
     print "\n\t\t\t Matched Entries\n\n" if $debug;
     print $REPORT "\n\t\t Matched Entries\n\n";
 
-    my $HitLog = $self->report_open("HitsPerVhost") if $countlog;
+    my $HitLog = '';
+    $HitLog = $self->report_open("HitsPerVhost") if $countlog;
 
     foreach my $key ( keys %fhs ) {
         close $fhs{$key};
